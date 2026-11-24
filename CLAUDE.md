@@ -120,7 +120,7 @@ Aynı çalışmanın iki derste sunulacağı iki hocaya da bildirilmeli (yapıld
 
 - **Tek asistan, iki arayüz:** Web arayüzünde sağ altta sohbet paneli; Unity'de kendi sohbet paneli. İkisi de aynı sunucu fonksiyonuna istek atar.
 - **Sunucu:** Web reposunda Vercel sunucu fonksiyonu `/api/chat` (`api/chat.ts`). API anahtarı yalnızca Vercel ortam değişkeninde (`GROQ_API_KEY`) ve yerelde git'e girmeyen `.env.local`'de durur (`*.local` zaten `.gitignore`'da); repo açık olduğu için asla koda yazılmaz. Kötüye kullanıma karşı basit istek sınırı (IP başına dakikalık) ve mesaj uzunluğu / geçmiş uzunluğu sınırı eklenir.
-- **Yerel test:** `npm run dev` (Vite) `/api` fonksiyonlarını çalıştırmaz; yerelde `npx vercel dev` kullanılır (`npx vercel link` ve `npx vercel env pull .env.local` ile). `api/` klasörü mevcut `tsc -b` kapsamında değil; ayrı bir `tsconfig` ile tip kontrolüne eklenir.
+- **Yerel test:** `npm run dev` (Vite) `/api` fonksiyonlarını çalıştırmaz; yerelde `npx vercel dev` kullanılır (`npx vercel link` ve `npx vercel env pull .env.local` ile). Anahtar Vercel'de Secret türünde; `env pull` Secret değeri getirmezse kullanıcı Groq'ta yerel test için ikinci bir anahtar oluşturup `.env.local`'e kendisi yazar (Claude anahtarı görmez). `api/` klasörü mevcut `tsc -b` kapsamında değil; ayrı bir `tsconfig` ile tip kontrolüne eklenir.
 - **İşleyiş:** Arayüz kullanıcının mesajıyla birlikte o anki durumu gönderir: ortak veri formatındaki anlık durum + geçmiş özeti (`smartWh`, `normalWh`, tasarruf %, simülasyon süresi sn, zaman çarpanı, duraklatma). LLM ya cevap yazar ya da tool calling ile komut döndürür; arayüz komutu uygular. Cevaplar Türkçe.
 - **Araçlar (tools):** `spawn_object(speedKmh)`, `set_night(isNight)`, `set_paused(paused)`, `set_time_scale(1|5|10)`, `reset_energy()`. Web'deki karşılıkları `useMockSimulation`'da hazır (`spawn`, `setNight`, `setPaused`, `setTimeScale`, `resetEnergy`).
 - **Unity istemcisi:** `UnityWebRequest` ile canlı siteye (`https://akilli-aydinlatma.vercel.app/api/chat`) istek atar; masaüstü derlemesinde CORS gerekmez. Anahtar Unity'de de tutulmaz.
@@ -161,7 +161,7 @@ Her aşama bir ya da birkaç `feature/*` dalı ile yapılır ve PR ile `develop`
 - [x] Unity Hub'da oturum aç (Personal lisans zaten etkindi, 23 Eylül 2026)
 - [x] `~/Projects/akilli-aydinlatma-unity` konumunda Universal 3D (URP) projesi oluştur (batchmode; URP 17.6.0, Input System, Test Framework hazır)
 - [x] Unity `.gitignore` ile git'i başlat, GitHub'da `akilli-aydinlatma-unity` reposunu aç (açık), `develop` dalını varsayılan yap
-- [ ] Groq hesabı aç, API anahtarı al (**kullanıcı yapar**; anahtar hiçbir sohbete ya da dosyaya yapıştırılmaz, Aşama 2b'de Vercel'e kullanıcı girer)
+- [x] Groq hesabı aç, API anahtarı al (kullanıcı yaptı, 24 Kasım; anahtar adı `akilli-aydinlatma`, doğrudan Vercel'e `GROQ_API_KEY` olarak Production + Preview + Development ortamlarına **Secret** türünde kaydedildi; hiçbir dosyada ya da sohbette yok)
 
 Kabul: Boş URP projesi açılıyor, repo GitHub'da.
 
@@ -264,6 +264,5 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] Arzu Hoca'nın web arayüzü demosuna geri bildirimi bekleniyor; gelen düzeltmeler web reposunda ayrı `feature/*` dallarında yapılır.
 - [ ] ESP32/donanım tarafını kimin yapacağı belli değil; kullanıcı gerekirse devralabilir.
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
-- [ ] Groq hesabı ve API anahtarı (kullanıcı).
 
-**Sıradaki adım:** Aşama 2b (web'de LLM asistanı). Önce kullanıcının Groq hesabı açıp API anahtarı alması gerekiyor. Alternatif: Aşama 3 (grafik) ile devam. Aşama 0–2, 24 Kasım'da takvimin önünde tamamlandı.
+**Sıradaki adım:** Aşama 2b (web'de LLM asistanı, web reposunda); Groq anahtarı Vercel'de hazır. Alternatif: Aşama 3 (grafik). Aşama 0–2, 24 Kasım'da takvimin önünde tamamlandı.
