@@ -179,8 +179,8 @@ Notlar:
 
 **Aşama 2 – Kontrol mantığı**
 
-- [ ] `controller.ts`'in C# karşılığı (kurallar, `ClassifyBySpeed`, enerji hesabı; `double` ile)
-- [ ] Web reposunda test vektörü betiği, Unity'de EditMode testi
+- [x] `controller.ts`'in C# karşılığı (kurallar, `ClassifyBySpeed`, enerji hesabı; `double` ile) → `Assets/Scripts/Mantik/KontrolMantigi.cs` (`AkilliAydinlatma` assembly'si, UnityEngine'e bağlı değil)
+- [x] Web reposunda test vektörü betiği (`npm run -s test-vektorleri`, 2877 durum), Unity'de EditMode testi (`Assets/Tests/EditMode/`) → 5/5 geçti, 24 Kasım. Kontrol mantığı değişirse iki taraf birlikte güncellenir ve JSON yeniden üretilir.
 - [ ] Simülasyon yöneticisi: nesne gönderme, hız, duraklatma, zaman çarpanı
 - [ ] Lambalar arasına sensör alanları (trigger); yaya/araç basit şekillerle hareket ediyor
 - [ ] Spot ışık şiddeti = PWM yüzdesi
@@ -265,4 +265,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 - [ ] Groq hesabı ve API anahtarı (kullanıcı).
 
-**Sıradaki adım:** Aşama 2 (kontrol mantığının C# karşılığı ve web ile birebirlik testi). Groq hesabı Aşama 2b'den önce açılmalı.
+**Sıradaki adım:** Aşama 2'nin kalanı: simülasyon yöneticisi (nesne gönderme, hız, duraklatma, zaman çarpanı), spot ışık şiddetinin PWM yüzdesine bağlanması, sensör alanları. Groq hesabı Aşama 2b'den önce açılmalı.
