@@ -167,11 +167,15 @@ Kabul: Boş URP projesi açılıyor, repo GitHub'da.
 
 **Aşama 1 – Sahne iskeleti**
 
-- [ ] Editör betiği: "Akıllı Aydınlatma → Sahneyi Kur" menü komutu (batchmode'da da çalışır)
-- [ ] Ölçek 1 birim = 1 m; 5 lamba 30 m arayla (30, 60, 90, 120, 150 m), yol 0–180 m, iki yanda kaldırım
-- [ ] Her lambada direk, armatür ve bir Spot Light; yönlü ışık (güneş/ay) ve yola bakan kamera
+- [x] Editör betiği: "Akıllı Aydınlatma → Sahneyi Kur" menü komutu (batchmode'da da çalışır) → `Assets/Editor/SahneKurucu.cs`
+- [x] Ölçek 1 birim = 1 m; 5 lamba 30 m arayla (30, 60, 90, 120, 150 m), yol 0–180 m, iki yanda kaldırım
+- [x] Her lambada direk, armatür ve bir Spot Light; yönlü ışık (güneş/ay) ve yola bakan kamera
 
-Kabul: Boş sahnede menüden tek tıkla yol ve lambalar oluşuyor; tekrar çalıştırınca eskisini silip yeniden kuruyor.
+Kabul: Boş sahnede menüden tek tıkla yol ve lambalar oluşuyor; tekrar çalıştırınca eskisini silip yeniden kuruyor. **Sağlandı** (24 Kasım; menüden ve batchmode'dan denendi, tekrar kurulumda nesne sayısı aynı: 67).
+
+Notlar:
+- Sahne `Assets/Scenes/Sokak.unity` olarak kaydedilir ve derleme listesindeki tek sahnedir. Malzemeler `Assets/Materials/Sahne/` altındadır. Yol X ekseni boyunca uzanır: dünya X = konum × 30 m. Direkler +Z kaldırımında.
+- Sahne her kurulumda sıfırdan oluşturulur: bu sahnede elle yapılan değişiklikler kalıcı olmaz, kalıcı olması gerekenler `SahneKurucu.cs`'e yazılır. Her kurulumda sahne dosyasındaki iç kimlikler değiştiği için git'te büyük ama anlamsız bir fark görünür; normaldir.
 
 **Aşama 2 – Kontrol mantığı**
 
@@ -194,6 +198,8 @@ Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu 
 **Aşama 3 – Grafik**
 
 - [ ] Gölgeler, armatürde emission, URP Volume ile bloom
+- [ ] `PC_RPAsset` içinde ek ışık gölge alanını (Additional Lights Shadow Atlas) 4096'ya çıkar: 5 spot gölgesi 2048'e sığmıyor, Unity "Reduced additional punctual light shadows resolution" uyarısı veriyor
+- [ ] Spot ışık şiddeti (şu an 80) ve kamera açısı ince ayarı: şu an ışıklar biraz sönük, yol ekranda ince bir şerit
 - [ ] Gece/gündüz geçişi: yönlü ışık rengi ve şiddeti, gökyüzü
 - [ ] Yaya yürüyüşü ve LUMA drone'unun salınma/pervane hareketi: Animation penceresinde anahtar karelerle (LUMA önce basit şekillerden)
 - [ ] CC0 yaya ve araç modelleri (Kenney / Quaternius); araç farları (Spot Light)
@@ -259,4 +265,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 - [ ] Groq hesabı ve API anahtarı (kullanıcı).
 
-**Sıradaki adım:** Aşama 1 (sahne kurma betiği), `feature/sahne-iskeleti` dalında. Groq hesabı Aşama 2b'den önce açılmalı.
+**Sıradaki adım:** Aşama 2 (kontrol mantığının C# karşılığı ve web ile birebirlik testi). Groq hesabı Aşama 2b'den önce açılmalı.
