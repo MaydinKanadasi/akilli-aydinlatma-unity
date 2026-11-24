@@ -1,0 +1,34 @@
+# Metin dosyaları: satır sonları git içinde LF olarak tutulur
+* text=auto eol=lf
+
+# Unity YAML dosyaları (Force Text serileştirme)
+*.unity    text eol=lf
+*.prefab   text eol=lf
+*.asset    text eol=lf
+*.mat      text eol=lf
+*.anim     text eol=lf
+*.controller text eol=lf
+*.meta     text eol=lf
+*.cs       text eol=lf diff=csharp
+*.uxml     text eol=lf
+*.uss      text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+
+# İkili dosyalar
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.tga  binary
+*.psd  binary
+*.fbx  binary
+*.FBX  binary
+*.obj  binary
+*.glb  binary
+*.wav  binary
+*.mp3  binary
+*.ogg  binary
+*.ttf  binary
+*.otf  binary
+*.exr  binary
+*.hdr  binary
