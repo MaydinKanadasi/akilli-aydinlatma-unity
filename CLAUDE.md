@@ -181,11 +181,12 @@ Notlar:
 
 - [x] `controller.ts`'in C# karşılığı (kurallar, `ClassifyBySpeed`, enerji hesabı; `double` ile) → `Assets/Scripts/Mantik/KontrolMantigi.cs` (`AkilliAydinlatma` assembly'si, UnityEngine'e bağlı değil)
 - [x] Web reposunda test vektörü betiği (`npm run -s test-vektorleri`, 2877 durum), Unity'de EditMode testi (`Assets/Tests/EditMode/`) → 5/5 geçti, 24 Kasım. Kontrol mantığı değişirse iki taraf birlikte güncellenir ve JSON yeniden üretilir.
-- [ ] Simülasyon yöneticisi: nesne gönderme, hız, duraklatma, zaman çarpanı
-- [ ] Lambalar arasına sensör alanları (trigger); yaya/araç basit şekillerle hareket ediyor
-- [ ] Spot ışık şiddeti = PWM yüzdesi
+- [x] Simülasyon yöneticisi: nesne gönderme, hız, duraklatma, zaman çarpanı → `Assets/Scripts/Simulasyon/SimulasyonYoneticisi.cs` (web'deki `useMockSimulation` ile aynı adım; komut adları LLM araçlarıyla aynı)
+- [x] Sensör alanları; yaya (turuncu kapsül, karşı kaldırımda) ve araç (kırmızı kutu, sağ şeritte) basit şekillerle hareket ediyor → `SensorAlani.cs`. Sensörler yol girişinde ve her lambanın hizasında; geçilince yeşil yanar, iki sensör arası süreden hız ölçülür. **Fizik tetikleyicisi (trigger) yerine süpürme kontrolü** kullanıldı: 10x'te hızlı araç bir karede sensörü atlayabiliyor; iki kare arasındaki aralık kontrolü atlamaz (testle doğrulandı).
+- [x] Spot ışık şiddeti ve armatür parlaması = PWM yüzdesi → `LambaKontrol.cs`
+- [x] Geçici geliştirici paneli (IMGUI, `GelistiriciPaneli.cs`); Aşama 4'te UI Toolkit arayüzüyle değişecek. Şu an sol taraftaki 1. ve 2. lambanın önünü kapatıyor.
 
-Kabul: EditMode testi geçiyor: aynı konum ve hızda lamba yüzdeleri ve güç web arayüzüyle birebir aynı.
+Kabul: EditMode testi geçiyor: aynı konum ve hızda lamba yüzdeleri ve güç web arayüzüyle birebir aynı. **Sağlandı** (24 Kasım; 12/12 test, Play modunda 50 km/s araç için `0 0 20 100 100`, 220 W ve ölçülen hız 50,0 km/s görüldü).
 
 **Aşama 2b – LLM asistanı (web)**
 
@@ -265,4 +266,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 - [ ] Groq hesabı ve API anahtarı (kullanıcı).
 
-**Sıradaki adım:** Aşama 2'nin kalanı: simülasyon yöneticisi (nesne gönderme, hız, duraklatma, zaman çarpanı), spot ışık şiddetinin PWM yüzdesine bağlanması, sensör alanları. Groq hesabı Aşama 2b'den önce açılmalı.
+**Sıradaki adım:** Aşama 2b (web'de LLM asistanı). Önce kullanıcının Groq hesabı açıp API anahtarı alması gerekiyor. Alternatif: Aşama 3 (grafik) ile devam. Aşama 0–2, 24 Kasım'da takvimin önünde tamamlandı.
