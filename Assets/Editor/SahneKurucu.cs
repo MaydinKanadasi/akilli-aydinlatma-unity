@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using AkilliAydinlatma;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -32,6 +33,7 @@ public static class SahneKurucu
     const float IsikSiddeti = 80f;
     const float IsikMenzili = 25f;
     const float IsikAcisi = 110f;
+    static readonly Color ArmaturIsimasi = new Color(1f, 0.85f, 0.6f) * 2f; // %100'deki parlama
 
     const string SahneYolu = "Assets/Scenes/Sokak.unity";
     const string MalzemeKlasoru = "Assets/Materials/Sahne";
@@ -63,10 +65,18 @@ public static class SahneKurucu
 
         ZeminKur(kok.transform, malzeme);
         YolKur(kok.transform, malzeme);
-        LambalariKur(kok.transform, malzeme);
-        AyIsigiKur(kok.transform);
-        KameraKur(kok.transform);
+        var lambalar = LambalariKur(kok.transform, malzeme);
+        var sensorler = SensorleriKur(kok.transform, malzeme);
+        var (yaya, arac) = NesneleriKur(kok.transform, malzeme);
+        var ay = AyIsigiKur(kok.transform);
+        var kamera = KameraKur(kok.transform);
         GeceOrtamiAyarla();
+
+        // Simülasyon yöneticisi ve geçici geliştirici paneli
+        var simGo = new GameObject("Simulasyon");
+        simGo.transform.SetParent(kok.transform, false);
+        simGo.AddComponent<SimulasyonYoneticisi>().Baglan(lambalar, sensorler, yaya, arac, ay, kamera);
+        simGo.AddComponent<GelistiriciPaneli>();
 
         Directory.CreateDirectory(Path.GetDirectoryName(SahneYolu));
         EditorSceneManager.SaveScene(sahne, SahneYolu);
@@ -121,10 +131,11 @@ public static class SahneKurucu
         }
     }
 
-    static void LambalariKur(Transform kok, Dictionary<string, Material> m)
+    static LambaKontrol[] LambalariKur(Transform kok, Dictionary<string, Material> m)
     {
         var lambalar = new GameObject("Lambalar").transform;
         lambalar.SetParent(kok, false);
+        var kontroller = new LambaKontrol[LambaSayisi];
 
         for (int i = 1; i <= LambaSayisi; i++)
         {
@@ -161,10 +172,54 @@ public static class SahneKurucu
             isik.innerSpotAngle = IsikAcisi * 0.6f;
             isik.shadows = LightShadows.Soft;
             isik.lightmapBakeType = LightmapBakeType.Realtime;
+
+            // Işık şiddeti ve armatür parlaması simülasyonda PWM yüzdesine göre ayarlanır
+            kontroller[i - 1] = lamba.gameObject.AddComponent<LambaKontrol>();
+            kontroller[i - 1].Baglan(isik, armatur.GetComponent<Renderer>(), IsikSiddeti, ArmaturIsimasi);
         }
+        return kontroller;
     }
 
-    static void AyIsigiKur(Transform kok)
+    // Algılama çizgileri: yol girişinde (konum 0) ve her lambanın hizasında (konum 1..5)
+    static SensorAlani[] SensorleriKur(Transform kok, Dictionary<string, Material> m)
+    {
+        var klasor = new GameObject("Sensorler").transform;
+        klasor.SetParent(kok, false);
+        var sensorler = new SensorAlani[LambaSayisi + 1];
+        for (int k = 0; k <= LambaSayisi; k++)
+        {
+            var cizgi = Kutu($"Sensor_{k}", klasor, m["Sensor"]);
+            cizgi.transform.position = new Vector3(k * LambaAraligi, 0.022f, 0f);
+            cizgi.transform.localScale = new Vector3(0.5f, 0.01f, YolGenisligi);
+            sensorler[k] = cizgi.AddComponent<SensorAlani>();
+            sensorler[k].Baglan(k, cizgi.GetComponent<Renderer>());
+        }
+        return sensorler;
+    }
+
+    // Yaya ve araç şimdilik basit şekiller (Aşama 3'te CC0 modellerle değişecek); simülasyon
+    // yoldaki nesnenin türüne göre birini görünür yapar ve X konumunu günceller.
+    static (Transform yaya, Transform arac) NesneleriKur(Transform kok, Dictionary<string, Material> m)
+    {
+        var klasor = new GameObject("Nesneler").transform;
+        klasor.SetParent(kok, false);
+
+        // Yaya, direklerin karşısındaki kaldırımda yürür (1,8 m boyunda kapsül)
+        var yaya = Ilkel(PrimitiveType.Capsule, "Yaya", klasor, m["Yaya"]);
+        yaya.transform.position = new Vector3(0f, KaldirimYuksekligi + 0.9f, -(YolGenisligi / 2f + KaldirimGenisligi / 2f));
+        yaya.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
+        yaya.SetActive(false);
+
+        // Araç sağ şeritte +X yönünde gider (4,2 × 1,8 × 1,4 m kutu)
+        var arac = Kutu("Arac", klasor, m["Arac"]);
+        arac.transform.position = new Vector3(0f, 0.72f, -YolGenisligi / 4f);
+        arac.transform.localScale = new Vector3(4.2f, 1.4f, 1.8f);
+        arac.SetActive(false);
+
+        return (yaya.transform, arac.transform);
+    }
+
+    static Light AyIsigiKur(Transform kok)
     {
         var ay = new GameObject("AyIsigi");
         ay.transform.SetParent(kok, false);
@@ -175,9 +230,10 @@ public static class SahneKurucu
         isik.intensity = 0.15f;
         isik.shadows = LightShadows.Soft;
         RenderSettings.sun = isik;
+        return isik;
     }
 
-    static void KameraKur(Transform kok)
+    static Camera KameraKur(Transform kok)
     {
         var kameraGo = new GameObject("Kamera") { tag = "MainCamera" };
         kameraGo.transform.SetParent(kok, false);
@@ -191,6 +247,7 @@ public static class SahneKurucu
         kamera.clearFlags = CameraClearFlags.SolidColor;
         kamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f); // gece göğü
         kameraGo.AddComponent<AudioListener>();
+        return kamera;
     }
 
     static void GeceOrtamiAyarla()
@@ -230,7 +287,11 @@ public static class SahneKurucu
             ["Kaldirim"] = Malzeme("Kaldirim", new Color(0.45f, 0.44f, 0.42f)),
             ["Cizgi"] = Malzeme("Cizgi", new Color(0.9f, 0.9f, 0.85f)),
             ["Direk"] = Malzeme("Direk", new Color(0.25f, 0.27f, 0.3f), metalik: 0.6f, puruzsuzluk: 0.5f),
-            ["Armatur"] = Malzeme("Armatur", new Color(0.9f, 0.85f, 0.7f), isima: new Color(1f, 0.85f, 0.6f) * 2f),
+            ["Armatur"] = Malzeme("Armatur", new Color(0.9f, 0.85f, 0.7f), isima: ArmaturIsimasi),
+            // Sensör çizgisi: emission açık ama siyah; algılayınca SensorAlani yeşile çevirir
+            ["Sensor"] = Malzeme("Sensor", new Color(0.1f, 0.12f, 0.1f), isima: Color.black),
+            ["Yaya"] = Malzeme("Yaya", new Color(0.95f, 0.55f, 0.15f)),
+            ["Arac"] = Malzeme("Arac", new Color(0.75f, 0.12f, 0.12f), metalik: 0.4f, puruzsuzluk: 0.6f),
         };
     }
 

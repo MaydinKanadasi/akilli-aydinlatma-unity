@@ -124,6 +124,16 @@ namespace AkilliAydinlatma
             return new SystemState(isNight, obj, lamps, powerW, normalPowerW);
         }
 
+        // Nesne bu konumu geçince yoldan çıkar (son lambadan bir aralık sonra)
+        public const int ExitPosition = LampCount + 1;
+
+        // Web'deki useMockSimulation.ts advance(): nesne dt saniyede kaç lamba aralığı ilerler
+        public static double NextPosition(TrackedObject obj, double dt, ControllerConfig config = null)
+        {
+            config ??= ControllerConfig.Default;
+            return obj.Position + ((obj.SpeedKmh / 3.6) * dt) / config.LampSpacingM;
+        }
+
         // Yüzdeyi ESP32 LEDC'nin 8 bitlik duty değerine çevirir (0–255); web'deki PwmPanel ile aynı
         public static int PercentToDuty(int percent) => JsRound((percent / 100.0) * DutyMax);
     }
