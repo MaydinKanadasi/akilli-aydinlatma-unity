@@ -11,7 +11,8 @@ using UnityEngine;
 // Sahne kaydedilmez; yalnızca görüntü üretilir. Geliştirici paneli (IMGUI) görüntüde yoktur.
 //
 // Unity -batchmode -quit -projectPath . -executeMethod SahneOnizleme.KomutSatirindanCek
-//       -onizleme <cikti.png> [-kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;ad2=..."]
+//       -onizleme <cikti.png> [-gunduz] [-kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;ad2=..."]
+// -gunduz: gündüz ortamı, lambalar %0 (1. kural)
 public static class SahneOnizleme
 {
     const string SahneYolu = "Assets/Scenes/Sokak.unity";
@@ -23,15 +24,18 @@ public static class SahneOnizleme
     {
         string cikti = Arguman("-onizleme") ?? "onizleme.png";
         EditorSceneManager.OpenScene(SahneYolu, OpenSceneMode.Single);
+        bool gunduz = Array.IndexOf(Environment.GetCommandLineArgs(), "-gunduz") >= 0;
+        var ortam = UnityEngine.Object.FindFirstObjectByType<OrtamGecisi>();
+        if (ortam != null) ortam.Ayarla(gece: !gunduz, aninda: true);
 
         var lambalar = UnityEngine.Object.FindObjectsByType<LambaKontrol>(FindObjectsSortMode.None);
         Array.Sort(lambalar, (a, b) => a.transform.position.x.CompareTo(b.transform.position.x));
         for (int i = 0; i < lambalar.Length && i < OrnekYuzdeler.Length; i++)
         {
-            lambalar[i].YuzdeUygula(OrnekYuzdeler[i]);
+            lambalar[i].YuzdeUygula(gunduz ? 0 : OrnekYuzdeler[i]);
             var isik = lambalar[i].GetComponentInChildren<Light>(true);
             Debug.Log($"[SahneOnizleme] {lambalar[i].name} x={lambalar[i].transform.position.x} " +
-                      $"%{OrnekYuzdeler[i]} isik={(isik != null && isik.enabled ? isik.intensity.ToString("0.#") : "kapali")}");
+                      $"%{(gunduz ? 0 : OrnekYuzdeler[i])} isik={(isik != null && isik.enabled ? isik.intensity.ToString("0.#") : "kapali")}");
         }
 
         // GameObject.Find pasif nesneleri bulmaz; araç sahnede pasif durduğu için ebeveynden aranır
