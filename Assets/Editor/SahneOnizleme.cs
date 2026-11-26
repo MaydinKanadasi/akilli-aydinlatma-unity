@@ -12,6 +12,7 @@ using UnityEngine;
 //
 // Unity -batchmode -quit -projectPath . -executeMethod SahneOnizleme.KomutSatirindanCek
 //       -onizleme <cikti.png> [-gunduz] [-kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;ad2=..."]
+//       [-yaya <konum> [-adimpozu]]
 // -gunduz: gündüz ortamı, lambalar %0 (1. kural)
 public static class SahneOnizleme
 {
@@ -38,16 +39,22 @@ public static class SahneOnizleme
                       $"%{(gunduz ? 0 : OrnekYuzdeler[i])} isik={(isik != null && isik.enabled ? isik.intensity.ToString("0.#") : "kapali")}");
         }
 
-        // GameObject.Find pasif nesneleri bulmaz; araç sahnede pasif durduğu için ebeveynden aranır
+        // GameObject.Find pasif nesneleri bulmaz; araç ve yaya sahnede pasif durduğu için ebeveynden aranır.
+        // -yaya <konum>: araç yerine yaya o konumda gösterilir; -adimpozu ile eklemler bir adım pozuna döner
+        // (eklem noktalarının doğru yerde olduğunu görmek için; sahne kaydedilmez).
         var nesneler = GameObject.Find("Sokak/Nesneler");
-        var arac = nesneler != null ? nesneler.transform.Find("Arac") : null;
-        if (arac != null)
+        string yayaKonumu = Arguman("-yaya");
+        var nesne = nesneler != null ? nesneler.transform.Find(yayaKonumu != null ? "Yaya" : "Arac") : null;
+        if (nesne != null)
         {
-            arac.gameObject.SetActive(true);
-            var p = arac.position;
-            arac.position = new Vector3(OrnekAracKonumu * SahneKurucu.LambaAraligi, p.y, p.z);
+            float konum = yayaKonumu != null ? float.Parse(yayaKonumu, CultureInfo.InvariantCulture) : OrnekAracKonumu;
+            nesne.gameObject.SetActive(true);
+            var p = nesne.position;
+            nesne.position = new Vector3(konum * SahneKurucu.LambaAraligi, p.y, p.z);
+            if (yayaKonumu != null && Array.IndexOf(Environment.GetCommandLineArgs(), "-adimpozu") >= 0)
+                AdimPozu(nesne);
         }
-        else Debug.LogWarning("[SahneOnizleme] Araç bulunamadı");
+        else Debug.LogWarning("[SahneOnizleme] Nesne bulunamadı");
 
         var kamera = Camera.main;
         // -kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;ad2=..." → her biri için <cikti>_<ad>.png
@@ -101,6 +108,24 @@ public static class SahneOnizleme
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(cikti)));
         File.WriteAllBytes(cikti, tex.EncodeToPNG());
         Debug.Log($"[SahneOnizleme] Görüntü yazıldı: {cikti}");
+    }
+
+    // Sol bacak önde, sağ bacak arkada; kollar ters yönde (Rotation.x, eksi = öne)
+    static void AdimPozu(Transform yaya)
+    {
+        var acilar = new (string ad, float x)[]
+        {
+            ("Kalca/Bacak_Sol", -25f), ("Kalca/Bacak_Sol/Diz_Sol", 5f),
+            ("Kalca/Bacak_Sag", 20f), ("Kalca/Bacak_Sag/Diz_Sag", 35f),
+            ("Kalca/Govde/Omuz_Sol", 20f), ("Kalca/Govde/Omuz_Sol/Dirsek_Sol", -15f),
+            ("Kalca/Govde/Omuz_Sag", -25f), ("Kalca/Govde/Omuz_Sag/Dirsek_Sag", -30f),
+        };
+        foreach (var (ad, x) in acilar)
+        {
+            var eklem = yaya.Find(ad);
+            if (eklem != null) eklem.localRotation = Quaternion.Euler(x, 0f, 0f);
+            else Debug.LogWarning($"[SahneOnizleme] Eklem bulunamadı: {ad}");
+        }
     }
 
     static string Arguman(string ad)
