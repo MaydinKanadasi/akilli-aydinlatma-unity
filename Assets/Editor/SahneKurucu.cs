@@ -40,11 +40,20 @@ public static class SahneKurucu
     const float IsikSiddeti = 250f;
     const float IsikMenzili = 45f;
     const float IsikAcisi = 165f;
-    const float IsikIcOrani = 0.85f; // iç koni / dış koni: iç konide tam şiddet, kenara doğru yumuşak düşüş // iç koni / dış koni: iç konide tam şiddet, kenara doğru yumuşak düşüş
+    const float IsikIcOrani = 0.85f; // iç koni / dış koni: iç konide tam şiddet, kenara doğru yumuşak düşüş
     // %100'deki armatür parlaması (emission). HDR: 1'den büyük değerler bloom eşiğini (1) aşar ve
     // armatürün çevresine ışık taşar. PWM ile doğrusal ölçeklenir: %20'de 1 (hale yok denecek kadar),
     // %100'de 5 (belirgin hale). 20 denendi: haleler ışık havuzlarını örtüyordu.
     static readonly Color ArmaturIsimasi = new Color(1f, 0.85f, 0.6f) * 5f;
+
+    // Araç farları (Spot Light, 0,7 m yükseklikte): sıcak beyaz, yola FarEgimi kadar eğik
+    const float FarSiddeti = 250f;
+    const float FarMenzili = 40f;
+    const float FarAcisi = 50f;
+    const float FarEgimi = 2.5f; // derece, aşağı
+    static readonly Color FarRengi = new Color(1f, 0.95f, 0.85f);
+    static readonly Color FarCamiIsimasi = new Color(1f, 0.95f, 0.85f) * 4f; // HDR, bloom ile parlar
+    static readonly Color StopCamiIsimasi = new Color(1f, 0.05f, 0.03f) * 3f;
 
     // Son işlem (post-processing): URP Global Volume ile bloom ve tonemapping
     const string VolumeProfiliYolu = "Assets/Settings/SokakVolumeProfili.asset";
@@ -234,13 +243,72 @@ public static class SahneKurucu
         yaya.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
         yaya.SetActive(false);
 
-        // Araç sağ şeritte +X yönünde gider (4,2 × 1,8 × 1,4 m kutu)
-        var arac = Kutu("Arac", klasor, m["Arac"]);
-        arac.transform.position = new Vector3(0f, 0.72f, -YolGenisligi / 4f);
-        arac.transform.localScale = new Vector3(4.2f, 1.4f, 1.8f);
+        var arac = AracKur(klasor, m);
         arac.SetActive(false);
 
         return (yaya.transform, arac.transform);
+    }
+
+    // Araç sağ şeritte +X yönünde gider: basit şekillerden kasa, kabin, tekerler (4,2 × 1,8 m, ~1,5 m yüksek).
+    // Kök boş nesnedir ve yol seviyesinde durur (ölçeklenmez: altındaki ışıklar ve camlar bozulmasın);
+    // simülasyon yalnızca kökün X'ini değiştirir. Önde iki far (Spot Light + parlayan cam), arkada stop camları;
+    // gece yanar, gündüz söner (AracFarlari). Far ışıkları gölgesiz: sokak lambalarının gölge alanını paylaşmasın.
+    static GameObject AracKur(Transform klasor, Dictionary<string, Material> m)
+    {
+        var arac = new GameObject("Arac");
+        arac.transform.SetParent(klasor, false);
+        arac.transform.position = new Vector3(0f, 0f, -YolGenisligi / 4f);
+
+        Parca(Kutu("Kasa_Sekil", arac.transform, m["Arac"]), new Vector3(0f, 0.6f, 0f), new Vector3(4.2f, 0.7f, 1.8f));
+        Parca(Kutu("Kabin_Sekil", arac.transform, m["Arac"]), new Vector3(-0.2f, 1.22f, 0f), new Vector3(2.2f, 0.55f, 1.6f));
+        foreach (float x in new[] { -1.35f, 1.35f })
+            foreach (float z in new[] { -0.9f, 0.9f })
+            {
+                var teker = Silindir("Teker_Sekil", arac.transform, m["AracTeker"]);
+                Parca(teker, new Vector3(x, 0.32f, z), new Vector3(0.64f, 0.12f, 0.64f));
+                teker.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // silindirin ekseni yana (Z)
+            }
+
+        var farlar = new Light[2];
+        var farCamlari = new Renderer[2];
+        var stopCamlari = new Renderer[2];
+        for (int i = 0; i < 2; i++)
+        {
+            float z = i == 0 ? 0.6f : -0.6f;
+            string taraf = i == 0 ? "Sol" : "Sag"; // sürücüye göre: +X'e bakarken +Z soldadır
+            var farCami = Kutu($"FarCami_{taraf}", arac.transform, m["AracFar"]);
+            Parca(farCami, new Vector3(2.11f, 0.7f, z), new Vector3(0.04f, 0.18f, 0.38f));
+            farCamlari[i] = farCami.GetComponent<Renderer>();
+            var stopCami = Kutu($"StopCami_{taraf}", arac.transform, m["AracStop"]);
+            Parca(stopCami, new Vector3(-2.11f, 0.7f, z * 1.08f), new Vector3(0.04f, 0.16f, 0.3f));
+            stopCamlari[i] = stopCami.GetComponent<Renderer>();
+
+            var farGo = new GameObject($"Far_{taraf}");
+            farGo.transform.SetParent(arac.transform, false);
+            farGo.transform.localPosition = new Vector3(2.16f, 0.7f, z);
+            // +X'e bakar, FarEgimi kadar yola eğik (önce X ekseninde eğ, sonra Y'de +X'e çevir)
+            farGo.transform.localRotation = Quaternion.Euler(FarEgimi, 90f, 0f);
+            var far = farGo.AddComponent<Light>();
+            far.type = LightType.Spot;
+            far.color = FarRengi;
+            far.intensity = FarSiddeti;
+            far.range = FarMenzili;
+            far.spotAngle = FarAcisi;
+            far.innerSpotAngle = FarAcisi * 0.6f;
+            far.shadows = LightShadows.None;
+            farlar[i] = far;
+        }
+
+        var farKontrol = arac.AddComponent<AracFarlari>();
+        farKontrol.Baglan(farlar, farCamlari, stopCamlari, FarCamiIsimasi, StopCamiIsimasi);
+        farKontrol.Ayarla(gece: true); // simülasyon gece başlar
+        return arac;
+    }
+
+    static void Parca(GameObject go, Vector3 yerelKonum, Vector3 olcek)
+    {
+        go.transform.localPosition = yerelKonum;
+        go.transform.localScale = olcek;
     }
 
     // LLM asistanı LUMA: 2. ve 3. lambanın arasında (75 m), lamba başlarının (8 m) üstünde, kameraya bakarak
@@ -402,6 +470,10 @@ public static class SahneKurucu
             // Sensör çizgisi: emission açık ama siyah; algılayınca SensorAlani yeşile çevirir
             ["Sensor"] = Malzeme("Sensor", new Color(0.1f, 0.12f, 0.1f), isima: Color.black),
             ["Arac"] = Malzeme("Arac", new Color(0.75f, 0.12f, 0.12f), metalik: 0.4f, puruzsuzluk: 0.6f),
+            ["AracTeker"] = Malzeme("AracTeker", new Color(0.05f, 0.05f, 0.05f), puruzsuzluk: 0.3f),
+            // Far ve stop camları: emission açık; yanık/sönük AracFarlari'nda (gündüz siyah)
+            ["AracFar"] = Malzeme("AracFar", new Color(0.85f, 0.85f, 0.8f), puruzsuzluk: 0.9f, isima: FarCamiIsimasi),
+            ["AracStop"] = Malzeme("AracStop", new Color(0.4f, 0.03f, 0.03f), puruzsuzluk: 0.9f, isima: StopCamiIsimasi),
         };
     }
 
