@@ -209,7 +209,8 @@ Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu 
 - [x] Spot ışık şiddeti 80 → 150; kamera yukarıdan yan bakış (90, 55, -48), FOV 60 (26 Kasım, önizlemelerle seçildi). Bloom/tonemapping sonrası şiddet yeniden gözden geçirilir.
 - [x] Gece/gündüz geçişi: `OrtamGecisi.cs`, 3 sn yumuşak geçiş (SmoothStep): yönlü ışık rengi/şiddeti/açısı, ortam ışığı, Skybox/Procedural gökyüzü (`Gokyuzu.mat`). Kurallar anında, görünüm yumuşak (26 Kasım, Play'de denendi)
 - [x] Eklemli yaya prefabı: `Assets/Prefabs/Yaya.prefab`, basit şekillerden, boş Animator (`Assets/Animations/Yaya.controller`) → `Assets/Editor/YayaKurucu.cs`; sahnede eski kapsülün yerinde (26 Kasım; kullanıcı prefab modunda Bacak_Sol'u döndürüp eklemin kalçadan döndüğünü doğruladı)
-- [ ] Yaya yürüyüşü ve LUMA drone'unun salınma/pervane hareketi: Animation penceresinde anahtar karelerle (LUMA önce basit şekillerden)
+- [x] Yaya yürüyüşü: `Assets/Animations/YayaYuru.anim` (1 sn, döngü), kullanıcı Animation penceresinde elle girdi (26 Kasım). Anahtarlar: Bacak_Sol 0:-25, 30:20, 60:-25; Bacak_Sag 0:20, 30:-25, 60:20; Diz_Sol 0:5, 30:35, 60:5; Diz_Sag 0:35, 30:5, 60:35; Omuz_Sol 0:20, 30:-25, 60:20; Omuz_Sag 0:-25, 30:20, 60:-25; Kalca Position.y 0:0,87, 15:0,93, 30:0,87, 45:0,93, 60:0,87. Klip kontrolü: Save Project sonrası `.anim` dosyasındaki `m_EditorCurves` okunur.
+- [ ] LUMA drone'unun salınma/pervane hareketi: Animation penceresinde anahtar karelerle (önce basit şekillerden)
 - [ ] Animator hızını simülasyona bağla: duraklatınca dursun, zaman çarpanı (ve yaya hızı) ile ölçeklensin; yoksa 5x'te ayaklar kayar
 - [ ] CC0 yaya ve araç modelleri (Kenney / Quaternius); araç farları (Spot Light)
 
@@ -275,6 +276,8 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - Bu makinede bir GateGuard hook'u, ilk Bash komutundan ve her yeni dosya oluşturma/düzenlemeden önce kısa bir açıklama (kullanıcının isteği, dosyayı kim kullanıyor, veri şeması, kullanıcının talimatı) istiyor; açıklamayı yazıp aynı işlemi tekrar denemek yeterli. Engellenen bir düzenlemeye bağlı komutlar aynı mesajda gönderilmez.
 - Vercel'in yeni arayüzü: proje sayfasında sol menüde **Environment Variables**; değişken türü **Secret** (kaydedildikten sonra görünmez) ya da **Config**. "Create Environment" ve "Upgrade" ücretli Pro plana ait.
 - Kullanıcı ekran görüntüsüyle ilerliyor; her adımda nereye tıklanacağı ve ne görüleceği yazılır.
+- Kullanıcı Unity'deki el işinden çabuk sıkılıyor (26 Kasım). Ders gereği elle yapılması gerekenler (anahtar kareler) dışındaki editör işlerini Claude kendisi yapar: dosya taşıma terminalden (`.meta` ile birlikte), pencere düzeni ve menü komutları computer-use ile (Unity bundle id `com.unity3d.UnityEditor5.x`, arka plan `app_*` araçları; `app_menu` ile menü komutları çalışıyor, pencereler arası sürükleme çalışmıyor). Animation penceresini yerleştirmek için menüde "Akıllı Aydınlatma → Animation Penceresini Alta Yerleştir" (`Assets/Editor/PencereDuzeni.cs`). Kullanıcıya düşen adımları kısa tut, aynı mesajda birkaç anahtar kareyi birlikte ver.
+- `SahneOnizleme.cs:32`'de `FindObjectsByType(FindObjectsSortMode)` Unity 6.6'da eskimiş uyarısı veriyor (zararsız; fırsat olunca düzeltilir).
 
 **Yalnızca claude.ai sohbetinde**
 
@@ -301,4 +304,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] ESP32/donanım tarafını kimin yapacağı belli değil; kullanıcı gerekirse devralabilir.
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 
-**Sıradaki adım:** Aşama 3, 5. adım: kullanıcı yaya yürüyüşünü Animation penceresinde elle anahtar karelerle yapar (prefab modunda `Yaya` kökü seçili → Window → Animation → Animation → Create → `Assets/Animations/YayaYuru.anim`; Claude adım adım yönlendirir, tek döngü ~1 sn, bacak/kol Rotation.x ve Kalca Position.y). Ardından 6. adımda Animator hızı simülasyona bağlanır (duraklatma, zaman çarpanı). 4. adım (eklemli yaya prefabı) 26 Kasım'da bitti. Aşama 3'ün 1–3. adımları (gölgeler, kamera, panel, emission, bloom, tonemapping, gece/gündüz geçişi, gökyüzü) 26 Kasım'da bitti. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Web `v0.4-demo` (LUMA dahil) canlıda.
+**Sıradaki adım:** Aşama 3, 6. adım: Animator hızını simülasyona bağla (`SimulasyonYoneticisi`: duraklatınca 0, zaman çarpanı ve yaya hızıyla ölçekle; klipte bir döngü ≈ 2 adım ≈ 1,4 m kabulüyle), sonra Play'de sahnede yürüyüşü kontrol et. 5. adım (yaya yürüyüşü anahtar kareleri) 26 Kasım'da bitti; "Akıllı Aydınlatma → Yaya Yürüyüşüne Hazırla" menüsü prefabı açıp kaydı başlatıyor. Ardından 6. adımda Animator hızı simülasyona bağlanır (duraklatma, zaman çarpanı). 4. adım (eklemli yaya prefabı) 26 Kasım'da bitti. Aşama 3'ün 1–3. adımları (gölgeler, kamera, panel, emission, bloom, tonemapping, gece/gündüz geçişi, gökyüzü) 26 Kasım'da bitti. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Web `v0.4-demo` (LUMA dahil) canlıda.
