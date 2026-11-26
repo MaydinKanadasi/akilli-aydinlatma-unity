@@ -23,6 +23,17 @@ namespace AkilliAydinlatma.Tests
         }
 
         [Test]
+        public void YayaAnimasyonHizi_IlerleyisleUyumlu()
+        {
+            // 5,04 km/s = 1,4 m/s = döngü boyu: 1x'te saniyede tam 1 döngü (klibin kendi hızı)
+            Assert.AreEqual(1f, SimulasyonYoneticisi.YayaAnimasyonHizi(5.04, 1, false), 1e-5);
+            // Zaman çarpanıyla doğrusal ölçeklenir
+            Assert.AreEqual(5f, SimulasyonYoneticisi.YayaAnimasyonHizi(5.04, 5, false), 1e-4);
+            // Duraklatınca bacaklar durur
+            Assert.AreEqual(0f, SimulasyonYoneticisi.YayaAnimasyonHizi(5.04, 5, true));
+        }
+
+        [Test]
         public void Baslangic_WebIleAyni()
         {
             Assert.IsTrue(sim.IsNight);

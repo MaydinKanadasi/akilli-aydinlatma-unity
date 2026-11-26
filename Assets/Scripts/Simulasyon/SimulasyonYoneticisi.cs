@@ -39,8 +39,19 @@ namespace AkilliAydinlatma
             this.ortam = ortam;
         }
 
+        // Yürüyüş klibi (YayaYuru, 1 sn) bir döngüde iki adım atar; adım ≈ 0,7 m (bacak boyu 0,92 m,
+        // açılar +20° / -25°) → döngü başına ≈ 1,4 m. Animator hızı = saniyedeki döngü sayısı.
+        public const double YayaDonguBoyuM = 1.4;
+        Animator yayaAnimator;
+
+        // Bacak salınımı yayanın ilerleyişiyle aynı hızda olsun (ayaklar yerde kaymasın):
+        // hız (m/s) / döngü boyu × zaman çarpanı; duraklatınca 0 (yaya olduğu pozda donar)
+        public static float YayaAnimasyonHizi(double speedKmh, int timeScale, bool paused) =>
+            paused ? 0f : (float)(speedKmh / 3.6 / YayaDonguBoyuM * timeScale);
+
         void Start()
         {
+            if (yaya != null) yayaAnimator = yaya.GetComponent<Animator>();
             OrtamiUygula(aninda: true);
             GorunumuGuncelle();
         }
@@ -140,6 +151,9 @@ namespace AkilliAydinlatma
 
             NesneGoster(yaya, Nesne is TrackedObject y && y.Type == ObjectType.Pedestrian ? y : (TrackedObject?)null);
             NesneGoster(arac, Nesne is TrackedObject a && a.Type == ObjectType.Car ? a : (TrackedObject?)null);
+
+            if (yayaAnimator != null && Nesne is TrackedObject p && p.Type == ObjectType.Pedestrian)
+                yayaAnimator.speed = YayaAnimasyonHizi(p.SpeedKmh, TimeScale, Paused);
         }
 
         static void NesneGoster(Transform t, TrackedObject? nesne)
