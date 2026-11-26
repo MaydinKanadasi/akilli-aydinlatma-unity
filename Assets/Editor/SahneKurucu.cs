@@ -213,17 +213,18 @@ public static class SahneKurucu
         return sensorler;
     }
 
-    // Yaya ve araç şimdilik basit şekiller (Aşama 3'te CC0 modellerle değişecek); simülasyon
-    // yoldaki nesnenin türüne göre birini görünür yapar ve X konumunu günceller.
+    // Simülasyon yoldaki nesnenin türüne göre yaya ya da aracı görünür yapar ve X konumunu günceller.
     static (Transform yaya, Transform arac) NesneleriKur(Transform kok, Dictionary<string, Material> m)
     {
         var klasor = new GameObject("Nesneler").transform;
         klasor.SetParent(kok, false);
 
-        // Yaya, direklerin karşısındaki kaldırımda yürür (1,8 m boyunda kapsül)
-        var yaya = Ilkel(PrimitiveType.Capsule, "Yaya", klasor, m["Yaya"]);
-        yaya.transform.position = new Vector3(0f, KaldirimYuksekligi + 0.9f, -(YolGenisligi / 2f + KaldirimGenisligi / 2f));
-        yaya.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
+        // Yaya: eklemli prefab (YayaKurucu; yürüyüş anahtar kareleri prefabın Animator'ında).
+        // Direklerin karşısındaki kaldırımda yürür; prefabın yüzü +Z, 90° döndürülerek yürüyüş yönüne (+X) bakar.
+        var yaya = (GameObject)PrefabUtility.InstantiatePrefab(YayaKurucu.Hazirla(), klasor);
+        yaya.name = "Yaya";
+        yaya.transform.position = new Vector3(0f, KaldirimYuksekligi, -(YolGenisligi / 2f + KaldirimGenisligi / 2f));
+        yaya.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
         yaya.SetActive(false);
 
         // Araç sağ şeritte +X yönünde gider (4,2 × 1,8 × 1,4 m kutu)
@@ -356,7 +357,7 @@ public static class SahneKurucu
     static GameObject Silindir(string ad, Transform ebeveyn, Material malzeme) =>
         Ilkel(PrimitiveType.Cylinder, ad, ebeveyn, malzeme);
 
-    static GameObject Ilkel(PrimitiveType tur, string ad, Transform ebeveyn, Material malzeme)
+    internal static GameObject Ilkel(PrimitiveType tur, string ad, Transform ebeveyn, Material malzeme)
     {
         var go = GameObject.CreatePrimitive(tur);
         go.name = ad;
@@ -381,12 +382,12 @@ public static class SahneKurucu
             ["Armatur"] = Malzeme("Armatur", new Color(0.9f, 0.85f, 0.7f), isima: ArmaturIsimasi),
             // Sensör çizgisi: emission açık ama siyah; algılayınca SensorAlani yeşile çevirir
             ["Sensor"] = Malzeme("Sensor", new Color(0.1f, 0.12f, 0.1f), isima: Color.black),
-            ["Yaya"] = Malzeme("Yaya", new Color(0.95f, 0.55f, 0.15f)),
             ["Arac"] = Malzeme("Arac", new Color(0.75f, 0.12f, 0.12f), metalik: 0.4f, puruzsuzluk: 0.6f),
         };
     }
 
-    static Material Malzeme(string ad, Color renk, float metalik = 0f, float puruzsuzluk = 0.1f, Color? isima = null)
+    // Yaya malzemeleri YayaKurucu'da; o da bu metodu kullanır
+    internal static Material Malzeme(string ad, Color renk, float metalik = 0f, float puruzsuzluk = 0.1f, Color? isima = null)
     {
         string yol = $"{MalzemeKlasoru}/{ad}.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(yol);
