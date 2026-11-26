@@ -12,7 +12,8 @@ using UnityEngine;
 //
 // Unity -batchmode -quit -projectPath . -executeMethod SahneOnizleme.KomutSatirindanCek
 //       -onizleme <cikti.png> [-gunduz] [-kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;ad2=..."]
-//       [-yaya <konum> [-adimpozu]]
+//       [-yaya <konum> [-adimpozu]] [-isik "siddet,menzil,aci,icOran"]
+// -yaya: lambalar kurallardan (5 km/s yaya) hesaplanır; -isik: spot ayarı denemesi (sahne değişmez)
 // -gunduz: gündüz ortamı, lambalar %0 (1. kural)
 public static class SahneOnizleme
 {
@@ -29,21 +30,40 @@ public static class SahneOnizleme
         var ortam = UnityEngine.Object.FindFirstObjectByType<OrtamGecisi>();
         if (ortam != null) ortam.Ayarla(gece: !gunduz, aninda: true);
 
+        // Yaya gösteriliyorsa lamba yüzdeleri kurallardan (5 km/s yaya, o konumda) hesaplanır
+        string yayaArg = Arguman("-yaya");
+        int[] yuzdeler = yayaArg == null ? OrnekYuzdeler
+            : KontrolMantigi.ComputeLampLevels(!gunduz, new TrackedObject(ObjectType.Pedestrian, 5,
+                double.Parse(yayaArg, CultureInfo.InvariantCulture)));
+
+        // -isik "siddet,menzil,aci,icOran": spot ışık ayarlarını sahneyi değiştirmeden denemek için
+        string isikArg = Arguman("-isik");
+        float[] isikAyari = isikArg == null ? null
+            : Array.ConvertAll(isikArg.Split(','), s => float.Parse(s, CultureInfo.InvariantCulture));
+
         var lambalar = UnityEngine.Object.FindObjectsByType<LambaKontrol>(FindObjectsSortMode.None);
         Array.Sort(lambalar, (a, b) => a.transform.position.x.CompareTo(b.transform.position.x));
-        for (int i = 0; i < lambalar.Length && i < OrnekYuzdeler.Length; i++)
+        for (int i = 0; i < lambalar.Length && i < yuzdeler.Length; i++)
         {
-            lambalar[i].YuzdeUygula(gunduz ? 0 : OrnekYuzdeler[i]);
+            int yuzde = gunduz ? 0 : yuzdeler[i];
+            lambalar[i].YuzdeUygula(yuzde);
             var isik = lambalar[i].GetComponentInChildren<Light>(true);
+            if (isik != null && isikAyari != null)
+            {
+                isik.intensity = isikAyari[0] * yuzde / 100f;
+                isik.range = isikAyari[1];
+                isik.spotAngle = isikAyari[2];
+                isik.innerSpotAngle = isikAyari[2] * isikAyari[3];
+            }
             Debug.Log($"[SahneOnizleme] {lambalar[i].name} x={lambalar[i].transform.position.x} " +
-                      $"%{(gunduz ? 0 : OrnekYuzdeler[i])} isik={(isik != null && isik.enabled ? isik.intensity.ToString("0.#") : "kapali")}");
+                      $"%{yuzde} isik={(isik != null && isik.enabled ? isik.intensity.ToString("0.#") : "kapali")}");
         }
 
         // GameObject.Find pasif nesneleri bulmaz; araç ve yaya sahnede pasif durduğu için ebeveynden aranır.
         // -yaya <konum>: araç yerine yaya o konumda gösterilir; -adimpozu ile eklemler bir adım pozuna döner
         // (eklem noktalarının doğru yerde olduğunu görmek için; sahne kaydedilmez).
         var nesneler = GameObject.Find("Sokak/Nesneler");
-        string yayaKonumu = Arguman("-yaya");
+        string yayaKonumu = yayaArg;
         var nesne = nesneler != null ? nesneler.transform.Find(yayaKonumu != null ? "Yaya" : "Arac") : null;
         if (nesne != null)
         {
