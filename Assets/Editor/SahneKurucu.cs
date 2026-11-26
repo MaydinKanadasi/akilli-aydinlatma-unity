@@ -29,8 +29,9 @@ public static class SahneKurucu
     const float DirekZ = YolGenisligi / 2f + 1f; // direk, yolun +Z tarafındaki kaldırımda
     const float ArmaturZ = 1.5f; // armatür, kolla yolun üstüne uzanır
 
-    // Spot ışık ayarları (ilk değerler; Aşama 3'te ince ayar yapılacak)
-    const float IsikSiddeti = 80f;
+    // Spot ışık ayarları. Şiddet %100'deki değerdir; LambaKontrol PWM yüzdesiyle doğrusal ölçekler.
+    // Işık 7,75 m yükseklikte; ters kare düşüşüyle yere ulaşan aydınlık şiddet / yükseklik² kadardır.
+    const float IsikSiddeti = 150f;
     const float IsikMenzili = 25f;
     const float IsikAcisi = 110f;
     static readonly Color ArmaturIsimasi = new Color(1f, 0.85f, 0.6f) * 2f; // %100'deki parlama
@@ -158,7 +159,7 @@ public static class SahneKurucu
             armatur.transform.position = new Vector3(x, DirekYuksekligi - 0.1f, ArmaturZ);
             armatur.transform.localScale = new Vector3(0.6f, 0.15f, 0.9f);
 
-            // Aşağı bakan spot ışık; şiddeti Aşama 2'de PWM yüzdesine bağlanacak
+            // Aşağı bakan spot ışık; yumuşak gölgeli (5 spot gölgesi PC_RPAsset'teki 4096'lık alana sığar)
             var isikGo = new GameObject("Isik");
             isikGo.transform.SetParent(lamba, false);
             isikGo.transform.position = new Vector3(x, DirekYuksekligi - 0.25f, ArmaturZ);
@@ -237,11 +238,15 @@ public static class SahneKurucu
     {
         var kameraGo = new GameObject("Kamera") { tag = "MainCamera" };
         kameraGo.transform.SetParent(kok, false);
-        // Yolun ortasına (90 m) çapraz yukarıdan bakar; 5 lambanın hepsi görünür
-        kameraGo.transform.position = new Vector3(YolUzunlugu / 2f, 45f, -80f);
-        kameraGo.transform.LookAt(new Vector3(YolUzunlugu / 2f, 0f, 5f));
+        // Yolun ortasına (90 m) çapraz yukarıdan bakar; 5 lambanın hepsi görünür.
+        // Yukarıdan yan bakış (26 Kasım'da önizlemelerle seçildi): lambalar eşit aralıklı ve aynı boyda
+        // görünür, kısılma düzeni yan yana okunur; ekranın üstü geliştirici paneline kalır.
+        // Sinematik çapraz açılar Aşama 4'teki anahtar kareli kamera turunda.
+        // Gölge mesafesi (PC_RPAsset, 200 m) kameranın en uzak lambaya uzaklığından büyük olmalı.
+        kameraGo.transform.position = new Vector3(YolUzunlugu / 2f, 55f, -48f);
+        kameraGo.transform.LookAt(new Vector3(YolUzunlugu / 2f, 0f, 2f));
         var kamera = kameraGo.AddComponent<Camera>();
-        kamera.fieldOfView = 55f;
+        kamera.fieldOfView = 60f;
         kamera.nearClipPlane = 0.3f;
         kamera.farClipPlane = 600f;
         kamera.clearFlags = CameraClearFlags.SolidColor;

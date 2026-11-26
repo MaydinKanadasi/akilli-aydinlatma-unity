@@ -8,7 +8,7 @@ namespace AkilliAydinlatma
     {
         [SerializeField] Light isik;
         [SerializeField] Renderer armatur;
-        [SerializeField] float maksSiddet = 80f;        // %100'deki ışık şiddeti
+        [SerializeField] float maksSiddet = 150f;       // %100'deki ışık şiddeti
         [SerializeField] Color maksIsima = Color.white; // %100'deki armatür parlaması (emission)
 
         static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
