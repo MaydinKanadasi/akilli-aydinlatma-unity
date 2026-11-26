@@ -27,7 +27,7 @@ public static class SahneOnizleme
         string cikti = Arguman("-onizleme") ?? "onizleme.png";
         EditorSceneManager.OpenScene(SahneYolu, OpenSceneMode.Single);
         bool gunduz = Array.IndexOf(Environment.GetCommandLineArgs(), "-gunduz") >= 0;
-        var ortam = UnityEngine.Object.FindFirstObjectByType<OrtamGecisi>();
+        var ortam = UnityEngine.Object.FindAnyObjectByType<OrtamGecisi>();
         if (ortam != null) ortam.Ayarla(gece: !gunduz, aninda: true);
 
         // Yaya gösteriliyorsa lamba yüzdeleri kurallardan (5 km/s yaya, o konumda) hesaplanır
@@ -41,7 +41,7 @@ public static class SahneOnizleme
         float[] isikAyari = isikArg == null ? null
             : Array.ConvertAll(isikArg.Split(','), s => float.Parse(s, CultureInfo.InvariantCulture));
 
-        var lambalar = UnityEngine.Object.FindObjectsByType<LambaKontrol>(FindObjectsSortMode.None);
+        var lambalar = UnityEngine.Object.FindObjectsByType<LambaKontrol>();
         Array.Sort(lambalar, (a, b) => a.transform.position.x.CompareTo(b.transform.position.x));
         for (int i = 0; i < lambalar.Length && i < yuzdeler.Length; i++)
         {

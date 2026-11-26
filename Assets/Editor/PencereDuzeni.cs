@@ -11,31 +11,39 @@ public static class PencereDuzeni
 
     // Yaya prefabını açar, Animation penceresini alta yerleştirir, kökü seçer, yandan görünüme geçer,
     // YayaYuru klibinde kaydı (Record) açıp 0. kareye gider.
+    // Yandan bakış: kamera -X yönüne bakar, yayanın yüzü (+Z) ekranda sağa döner
     [MenuItem("Akıllı Aydınlatma/Yaya Yürüyüşüne Hazırla")]
-    static void YayaYuruyusuneHazirla()
+    static void YayaYuruyusuneHazirla() =>
+        AnimasyonaHazirla(YayaKurucu.PrefabYolu, YayaKlibi, new Vector3(0f, 0.9f, 0f), Quaternion.Euler(0f, -90f, 0f), 1.4f);
+
+    // Önden, hafif yukarıdan ve yandan bakış: pervaneler ve salınma birlikte görünür
+    [MenuItem("Akıllı Aydınlatma/LUMA Animasyonuna Hazırla")]
+    static void LumaAnimasyonunaHazirla() =>
+        AnimasyonaHazirla(LumaKurucu.PrefabYolu, LumaKurucu.KlipYolu, new Vector3(0f, 0.3f, 0f), Quaternion.Euler(15f, 205f, 0f), 1.3f);
+
+    static void AnimasyonaHazirla(string prefabYolu, string klipYolu, Vector3 bakisNoktasi, Quaternion bakis, float uzaklik)
     {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(YayaKurucu.PrefabYolu);
-        if (prefab == null) { Debug.LogError("[PencereDuzeni] Yaya prefabı yok; önce Sahneyi Kur."); return; }
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabYolu);
+        if (prefab == null) { Debug.LogError($"[PencereDuzeni] {prefabYolu} yok; önce Sahneyi Kur."); return; }
         AssetDatabase.OpenAsset(prefab); // prefab modu
 
         var animasyon = AnimationPenceresiniYerlestir();
 
-        // Yandan bakış: kamera -X yönüne bakar, yayanın yüzü (+Z) ekranda sağa döner
         var sahne = SceneView.lastActiveSceneView;
         if (sahne != null)
         {
             sahne.orthographic = false;
-            sahne.LookAt(new Vector3(0f, 0.9f, 0f), Quaternion.Euler(0f, -90f, 0f), 1.4f);
+            sahne.LookAt(bakisNoktasi, bakis, uzaklik);
         }
 
         // Seçim Animation penceresine bir sonraki karede ulaşır; kayıt ondan sonra açılır
         EditorApplication.delayCall += () =>
         {
-            var klip = AssetDatabase.LoadAssetAtPath<AnimationClip>(YayaKlibi);
+            var klip = AssetDatabase.LoadAssetAtPath<AnimationClip>(klipYolu);
             if (klip != null) animasyon.animationClip = klip;
             animasyon.frame = 0;
             animasyon.recording = true;
-            Debug.Log("[PencereDuzeni] Yaya yürüyüşüne hazır: kayıt açık, kare 0.");
+            Debug.Log($"[PencereDuzeni] {prefab.name} animasyonuna hazır: kayıt açık, kare 0.");
         };
     }
 
