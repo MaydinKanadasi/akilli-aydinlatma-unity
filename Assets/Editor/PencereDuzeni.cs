@@ -47,6 +47,24 @@ public static class PencereDuzeni
         };
     }
 
+    // Retina ekranda Game sekmesi varsayılan olarak düşük çözünürlükte çizip 2 kat büyütür ("Scale 2x"):
+    // arayüz yazıları bulanıklaşır. Free Aspect menüsündeki "Low Resolution Aspect Ratios" seçeneğini kapatır
+    // (GameView iç sınıf olduğu için yansımayla). Yalnızca editör görünümü; macOS derlemesini etkilemez.
+    [MenuItem("Akıllı Aydınlatma/Game Görünümünü Keskinleştir")]
+    static void GameGorunumunuKeskinlestir()
+    {
+        Type tip = typeof(Editor).Assembly.GetType("UnityEditor.GameView");
+        var ozellik = tip?.GetProperty("lowResolutionForAspectRatios",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+        if (ozellik == null) { Debug.LogError("[PencereDuzeni] GameView.lowResolutionForAspectRatios bulunamadı."); return; }
+        foreach (var pencere in Resources.FindObjectsOfTypeAll(tip))
+        {
+            ozellik.SetValue(pencere, false);
+            ((EditorWindow)pencere).Repaint();
+        }
+        Debug.Log("[PencereDuzeni] Game görünümü tam çözünürlükte (Low Resolution Aspect Ratios kapalı).");
+    }
+
     [MenuItem("Akıllı Aydınlatma/Animation Penceresini Alta Yerleştir")]
     static void AnimationPenceresiniYerlestirMenu() => AnimationPenceresiniYerlestir();
 

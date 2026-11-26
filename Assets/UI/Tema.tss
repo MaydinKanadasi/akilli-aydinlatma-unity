@@ -1,0 +1,3 @@
+/* Unity'nin varsayılan çalışma zamanı teması (düğme, kaydırıcı vb. temel görünüm).
+   Arayüzün kendi renkleri Arayuz.uss'te. PanelSettings (ArayuzPanelAyarlari) bu temayı kullanır. */
+@import url("unity-theme://default");

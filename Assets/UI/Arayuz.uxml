@@ -1,0 +1,88 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Simülasyon arayüzü (UI Toolkit). Ekranın üstünde, gökyüzü tarafında yatay bir şerit:
+         kontroller | durum (lambalar, PWM) | enerji. Değerleri ArayuzPaneli.cs doldurur; stiller Arayuz.uss'te.
+         Ölçüler 1600 piksel genişliğe göre (PanelSettings ekran genişliğine göre ölçekler). -->
+    <Style src="Arayuz.uss" />
+    <ui:VisualElement name="kok" class="kok" picking-mode="Ignore">
+        <ui:VisualElement name="panel" class="panel">
+            <ui:VisualElement class="baslik-satiri">
+                <ui:Label text="Akıllı Sokak Aydınlatması" class="baslik" />
+                <ui:Label name="ortam" text="Gece" class="rozet" />
+                <ui:Label name="sim-durumu" text="" class="ikincil" />
+                <ui:VisualElement class="esnek" />
+                <ui:Button name="gizle" text="Gizle" class="dugme kucuk" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="sutunlar">
+                <!-- Kontroller -->
+                <ui:VisualElement class="sutun kontroller">
+                    <ui:Label text="KONTROLLER" class="sutun-baslik" />
+                    <ui:VisualElement class="satir">
+                        <ui:Button name="gonder-yaya" text="Yaya (5 km/s)" class="dugme" />
+                        <ui:Button name="gonder-arac" text="Araç (50 km/s)" class="dugme" />
+                        <ui:Button name="gonder-hizli" text="Hızlı araç (90 km/s)" class="dugme" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="satir">
+                        <ui:Label text="Hız" class="etiket" />
+                        <ui:Slider name="hiz" low-value="1" high-value="120" value="50" class="hiz-kaydirici" />
+                        <ui:Label name="hiz-degeri" text="50 km/s" class="hiz-degeri" />
+                        <ui:Button name="gonder" text="Gönder" class="dugme vurgu" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="satir">
+                        <ui:Button name="gece-gunduz" text="Gündüze geç" class="dugme" />
+                        <ui:Button name="duraklat" text="Duraklat" class="dugme" />
+                        <ui:Button name="olcek-1" text="1x" class="dugme olcek" />
+                        <ui:Button name="olcek-5" text="5x" class="dugme olcek" />
+                        <ui:Button name="olcek-10" text="10x" class="dugme olcek" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- Durum: yoldaki nesne, sensör, 5 lambanın parlaklığı ve PWM duty -->
+                <ui:VisualElement class="sutun durum">
+                    <ui:Label text="DURUM" class="sutun-baslik" />
+                    <ui:Label name="nesne" text="Yolda nesne yok" class="deger-metin" />
+                    <ui:Label name="olculen-hiz" text="Sensörle ölçülen hız: —" class="ikincil" />
+                    <ui:VisualElement name="lambalar" class="lambalar" />
+                </ui:VisualElement>
+
+                <!-- Enerji -->
+                <ui:VisualElement class="sutun enerji">
+                    <ui:VisualElement class="satir">
+                        <ui:Label text="ENERJİ" class="sutun-baslik" />
+                        <ui:VisualElement class="esnek" />
+                        <ui:Button name="sifirla" text="Sıfırla" class="dugme kucuk" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="istatistikler">
+                        <ui:VisualElement class="istatistik">
+                            <ui:Label text="Anlık güç (akıllı)" class="istatistik-etiket" />
+                            <ui:Label name="guc-akilli" text="0 W" class="istatistik-deger" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="istatistik">
+                            <ui:Label text="Anlık güç (normal)" class="istatistik-etiket" />
+                            <ui:Label name="guc-normal" text="0 W" class="istatistik-deger soluk" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="istatistik">
+                            <ui:Label text="Anlık tasarruf" class="istatistik-etiket" />
+                            <ui:Label name="tasarruf-anlik" text="—" class="istatistik-deger iyi" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="istatistik">
+                            <ui:Label text="Toplam tasarruf" class="istatistik-etiket" />
+                            <ui:Label name="tasarruf-toplam" text="—" class="istatistik-deger iyi" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="cubuk-satiri">
+                        <ui:Label text="Normal" class="cubuk-adi" />
+                        <ui:VisualElement class="cubuk"><ui:VisualElement name="cubuk-normal" class="cubuk-dolgu normal" /></ui:VisualElement>
+                        <ui:Label name="wh-normal" text="0,0 Wh" class="cubuk-deger" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="cubuk-satiri">
+                        <ui:Label text="Akıllı" class="cubuk-adi" />
+                        <ui:VisualElement class="cubuk"><ui:VisualElement name="cubuk-akilli" class="cubuk-dolgu akilli" /></ui:VisualElement>
+                        <ui:Label name="wh-akilli" text="0,0 Wh" class="cubuk-deger" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Button name="goster" text="Paneli göster" class="dugme kucuk goster gizli" />
+    </ui:VisualElement>
+</ui:UXML>

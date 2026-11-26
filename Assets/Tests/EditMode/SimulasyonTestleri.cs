@@ -102,6 +102,22 @@ namespace AkilliAydinlatma.Tests
         }
 
         [Test]
+        public void Arayuz_TurkceBicim()
+        {
+            // Ondalık virgül; 1000 Wh'ten itibaren kWh (web EnergyPanel ile aynı)
+            Assert.AreEqual("12,3 Wh", ArayuzPaneli.EnerjiYaz(12.34));
+            Assert.AreEqual("1,23 kWh", ArayuzPaneli.EnerjiYaz(1234.5));
+            // Gündüz normal sistem tüketmez: tasarruf yüzdesi yok
+            Assert.AreEqual("—", ArayuzPaneli.TasarrufYaz(0, 0, "0"));
+            Assert.AreEqual("%72", ArayuzPaneli.TasarrufYaz(140, 500, "0"));
+            Assert.AreEqual("Araç · 40 km/s · konum 2,30",
+                ArayuzPaneli.NesneYaz(new TrackedObject(ObjectType.Car, 40, 2.3)));
+            Assert.AreEqual("Yolda nesne yok", ArayuzPaneli.NesneYaz(null));
+            Assert.AreEqual("1:05", ArayuzPaneli.SureYaz(65.9));
+            Assert.AreEqual("1:00:05", ArayuzPaneli.SureYaz(3605));
+        }
+
+        [Test]
         public void Gunduz_TumLambalarKapali()
         {
             sim.SetNight(false);

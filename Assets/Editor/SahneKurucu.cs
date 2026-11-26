@@ -101,17 +101,50 @@ public static class SahneKurucu
         var gokyuzu = GeceOrtamiAyarla(ay);
         GorselEfektleriKur(kok.transform);
 
-        // Simülasyon yöneticisi, gece/gündüz geçişi ve geçici geliştirici paneli
+        // Simülasyon yöneticisi, gece/gündüz geçişi ve arayüz
         var simGo = new GameObject("Simulasyon");
         simGo.transform.SetParent(kok.transform, false);
         var ortam = simGo.AddComponent<OrtamGecisi>();
         ortam.Baglan(ay, gokyuzu);
         simGo.AddComponent<SimulasyonYoneticisi>().Baglan(lambalar, sensorler, yaya, arac, ortam);
-        simGo.AddComponent<GelistiriciPaneli>();
+        ArayuzKur(simGo);
 
         Directory.CreateDirectory(Path.GetDirectoryName(SahneYolu));
         EditorSceneManager.SaveScene(sahne, SahneYolu);
         SahneyiDerlemeListesineEkle();
+    }
+
+    // ---------- Arayüz (UI Toolkit) ----------
+
+    const string ArayuzKlasoru = "Assets/UI";
+
+    // Ekran üstündeki arayüz şeridi: Arayuz.uxml + Arayuz.uss, tema Tema.tss. PanelSettings varlığı yoksa
+    // oluşturulur, varsa ayarları her kurulumda yeniden yazılır (Inspector'dan değiştirilenler geri alınır).
+    // Ölçekleme 1600 piksel genişliğe göre (1920 yazıları küçük bırakıyordu): dar pencerede şerit küçülür ama
+    // ekrandan taşmaz (şerit ~1450 piksel).
+    static void ArayuzKur(GameObject simGo)
+    {
+        string ayarYolu = $"{ArayuzKlasoru}/ArayuzPanelAyarlari.asset";
+        var ayar = AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.PanelSettings>(ayarYolu);
+        if (ayar == null)
+        {
+            ayar = ScriptableObject.CreateInstance<UnityEngine.UIElements.PanelSettings>();
+            AssetDatabase.CreateAsset(ayar, ayarYolu);
+        }
+        ayar.themeStyleSheet = AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.ThemeStyleSheet>($"{ArayuzKlasoru}/Tema.tss");
+        ayar.scaleMode = UnityEngine.UIElements.PanelScaleMode.ScaleWithScreenSize;
+        ayar.referenceResolution = new Vector2Int(1600, 900);
+        ayar.screenMatchMode = UnityEngine.UIElements.PanelScreenMatchMode.MatchWidthOrHeight;
+        ayar.match = 0f; // genişliğe göre
+        EditorUtility.SetDirty(ayar);
+        AssetDatabase.SaveAssets();
+
+        var belge = simGo.AddComponent<UnityEngine.UIElements.UIDocument>();
+        belge.panelSettings = ayar;
+        belge.visualTreeAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.UIElements.VisualTreeAsset>($"{ArayuzKlasoru}/Arayuz.uxml");
+        if (ayar.themeStyleSheet == null || belge.visualTreeAsset == null)
+            Debug.LogError("[SahneKurucu] Arayüz dosyaları (Assets/UI/Tema.tss, Arayuz.uxml) yüklenemedi.");
+        simGo.AddComponent<ArayuzPaneli>();
     }
 
     // ---------- Sahne parçaları ----------
