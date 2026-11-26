@@ -81,14 +81,16 @@ public static class SahneKurucu
         var sensorler = SensorleriKur(kok.transform, malzeme);
         var (yaya, arac) = NesneleriKur(kok.transform, malzeme);
         var ay = AyIsigiKur(kok.transform);
-        var kamera = KameraKur(kok.transform);
-        GeceOrtamiAyarla();
+        KameraKur(kok.transform);
+        var gokyuzu = GeceOrtamiAyarla(ay);
         GorselEfektleriKur(kok.transform);
 
-        // Simülasyon yöneticisi ve geçici geliştirici paneli
+        // Simülasyon yöneticisi, gece/gündüz geçişi ve geçici geliştirici paneli
         var simGo = new GameObject("Simulasyon");
         simGo.transform.SetParent(kok.transform, false);
-        simGo.AddComponent<SimulasyonYoneticisi>().Baglan(lambalar, sensorler, yaya, arac, ay, kamera);
+        var ortam = simGo.AddComponent<OrtamGecisi>();
+        ortam.Baglan(ay, gokyuzu);
+        simGo.AddComponent<SimulasyonYoneticisi>().Baglan(lambalar, sensorler, yaya, arac, ortam);
         simGo.AddComponent<GelistiriciPaneli>();
 
         Directory.CreateDirectory(Path.GetDirectoryName(SahneYolu));
@@ -102,7 +104,8 @@ public static class SahneKurucu
     {
         var zemin = Kutu("Zemin", kok, m["Zemin"]);
         zemin.transform.position = new Vector3(YolUzunlugu / 2f, -0.05f, 0f);
-        zemin.transform.localScale = new Vector3(YolUzunlugu + 120f, 0.1f, 120f);
+        // Kamera 48° aşağı baktığı için kadrajın üstü ~170 m ileriyi görür: zemin kenarı görünmesin diye geniş
+        zemin.transform.localScale = new Vector3(600f, 0.1f, 600f);
     }
 
     static void YolKur(Transform kok, Dictionary<string, Material> m)
@@ -236,11 +239,9 @@ public static class SahneKurucu
     {
         var ay = new GameObject("AyIsigi");
         ay.transform.SetParent(kok, false);
-        ay.transform.rotation = Quaternion.Euler(40f, -30f, 0f);
+        // Gece ay, gündüz güneş: renk, şiddet ve açı OrtamGecisi'nde (GeceOrtamiAyarla gece değerlerini yazar)
         var isik = ay.AddComponent<Light>();
         isik.type = LightType.Directional;
-        isik.color = new Color(0.55f, 0.65f, 1f); // soğuk mavi ay ışığı
-        isik.intensity = 0.15f;
         isik.shadows = LightShadows.Soft;
         RenderSettings.sun = isik;
         return isik;
@@ -261,8 +262,8 @@ public static class SahneKurucu
         kamera.fieldOfView = 60f;
         kamera.nearClipPlane = 0.3f;
         kamera.farClipPlane = 600f;
-        kamera.clearFlags = CameraClearFlags.SolidColor;
-        kamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f); // gece göğü
+        kamera.clearFlags = CameraClearFlags.Skybox; // gökyüzü: Gokyuzu.mat (Skybox/Procedural)
+        kamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f); // gökyüzü yoksa yedek renk
         // Son işlem (bloom, tonemapping) kamerada açık olmalı; ince direklerin kenarları için SMAA
         var urpKamera = kamera.GetUniversalAdditionalCameraData();
         urpKamera.renderPostProcessing = true;
@@ -326,11 +327,25 @@ public static class SahneKurucu
         return bilesen;
     }
 
-    static void GeceOrtamiAyarla()
+    // Sahne gece açılır. Gökyüzü Unity'nin hazır Skybox/Procedural shader'ı: güneş yönü RenderSettings.sun'dan
+    // gelir, atmosfer saçılmasını hesaplar. Ortam ışığı düz renk (Flat): geçişte her kare hesaplama gerektirmez.
+    static Material GeceOrtamiAyarla(Light ay)
     {
-        RenderSettings.skybox = null;
+        string yol = $"{MalzemeKlasoru}/Gokyuzu.mat";
+        var gokyuzu = AssetDatabase.LoadAssetAtPath<Material>(yol);
+        if (gokyuzu == null)
+        {
+            gokyuzu = new Material(Shader.Find("Skybox/Procedural"));
+            AssetDatabase.CreateAsset(gokyuzu, yol);
+        }
+        gokyuzu.SetFloat("_SunSize", 0.03f);
+        gokyuzu.SetColor("_GroundColor", new Color(0.2f, 0.22f, 0.2f));
+        OrtamGecisi.GeceDegerleriniYaz(gokyuzu, ay);
+        EditorUtility.SetDirty(gokyuzu);
+
+        RenderSettings.skybox = gokyuzu;
         RenderSettings.ambientMode = AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.05f, 0.06f, 0.1f);
+        return gokyuzu;
     }
 
     // ---------- Yardımcılar ----------

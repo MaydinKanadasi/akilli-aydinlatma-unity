@@ -11,8 +11,7 @@ namespace AkilliAydinlatma
         [SerializeField] SensorAlani[] sensorler;
         [SerializeField] Transform yaya;
         [SerializeField] Transform arac;
-        [SerializeField] Light ayIsigi;
-        [SerializeField] Camera kamera;
+        [SerializeField] OrtamGecisi ortam; // gece/gündüz görünümü (ışık, gökyüzü)
 
         // ---- Durum (web ile aynı başlangıç: gece, yol boş, 5x, çalışıyor) ----
         public bool IsNight { get; private set; } = true;
@@ -31,19 +30,18 @@ namespace AkilliAydinlatma
         public SystemState State => KontrolMantigi.ComputeState(IsNight, Nesne);
 
         public void Baglan(LambaKontrol[] lambalar, SensorAlani[] sensorler, Transform yaya, Transform arac,
-                           Light ayIsigi, Camera kamera)
+                           OrtamGecisi ortam)
         {
             this.lambalar = lambalar;
             this.sensorler = sensorler;
             this.yaya = yaya;
             this.arac = arac;
-            this.ayIsigi = ayIsigi;
-            this.kamera = kamera;
+            this.ortam = ortam;
         }
 
         void Start()
         {
-            OrtamiUygula();
+            OrtamiUygula(aninda: true);
             GorunumuGuncelle();
         }
 
@@ -73,7 +71,7 @@ namespace AkilliAydinlatma
         public void SetNight(bool isNight)
         {
             IsNight = isNight;
-            OrtamiUygula();
+            OrtamiUygula(aninda: false); // kurallar anında, görünüm yumuşak geçişle
         }
 
         public void SetPaused(bool paused) => Paused = paused;
@@ -155,17 +153,10 @@ namespace AkilliAydinlatma
             t.position = new Vector3((float)(nesne.Value.Position * ControllerConfig.Default.LampSpacingM), p.y, p.z);
         }
 
-        // Gece/gündüz ortamı (Aşama 3'te yumuşak geçiş ve gökyüzüyle değiştirilecek)
-        void OrtamiUygula()
+        // Gece/gündüz görünümü OrtamGecisi'nde (EditMode testlerinde bağlı değildir)
+        void OrtamiUygula(bool aninda)
         {
-            if (ayIsigi != null)
-            {
-                ayIsigi.color = IsNight ? new Color(0.55f, 0.65f, 1f) : new Color(1f, 0.96f, 0.88f);
-                ayIsigi.intensity = IsNight ? 0.15f : 1.2f;
-            }
-            if (kamera != null)
-                kamera.backgroundColor = IsNight ? new Color(0.02f, 0.03f, 0.08f) : new Color(0.55f, 0.75f, 0.95f);
-            RenderSettings.ambientLight = IsNight ? new Color(0.05f, 0.06f, 0.1f) : new Color(0.45f, 0.5f, 0.55f);
+            if (ortam != null) ortam.Ayarla(IsNight, aninda);
         }
     }
 }
