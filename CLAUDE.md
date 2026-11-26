@@ -43,15 +43,15 @@ Enerji: LED gücü duty ile doğrusal kabul edilir; akıllı güç = Σ (parlakl
 
 ## Mevcut durum: web arayüzü
 
-Web arayüzü tamamlandı ve `v0.3-demo` sürümüyle yayında. Hocaya `v0.2-demo` inceleme için gönderilmişti; `v0.3` yalnızca geniş ekranda iki sütunlu düzen ve README düzeltmesi ekledi.
+Web arayüzü `v0.4-demo` sürümüyle yayında (26 Kasım): LLM asistanı LUMA dahil. Hocaya `v0.2-demo` inceleme için gönderilmişti; `v0.3` iki sütunlu düzeni, `v0.4` LUMA'yı ekledi.
 
 |  |  |
 | --- | --- |
 | Canlı site | [akilli-aydinlatma.vercel.app](https://akilli-aydinlatma.vercel.app) (Vercel, `main`'den otomatik yayın) |
 | Repo | [MaydinKanadasi/akilli-aydinlatma](https://github.com/MaydinKanadasi/akilli-aydinlatma) (açık), yerelde `~/Projects/akilli-aydinlatma` |
 | Teknoloji | React 19 + Vite 8 + TypeScript 6, düz CSS, grafikler kendi SVG kodumuz (kütüphane yok) |
-| Sürümler | `v0.1-demo` (temel demo), `v0.2-demo` (görsel revizyon), `v0.3-demo` (iki sütunlu düzen) |
-| Son PR'lar | #13 develop → main (v0.3), #14 test vektörü betiği, #15 LLM asistanı LUMA (develop'ta; main'e henüz geçmedi) |
+| Sürümler | `v0.1-demo` (temel demo), `v0.2-demo` (görsel revizyon), `v0.3-demo` (iki sütunlu düzen), `v0.4-demo` (LLM asistanı LUMA) |
+| Son PR'lar | #14 test vektörü betiği, #15 LLM asistanı LUMA, #16 README, #17 develop → main (v0.4) |
 
 **Özellikler:** gerçekçi yol sahnesi (gece/gündüz, kaldırım, ışık konisi ve halkası, yürüyen yaya, farlı araç), hız kaydırıcısı ve hazır butonlar, duraklat / tek adım / 1x-5x-10x, yola tıklayıp sürükleme, enerji paneli, son ~30 sn'lik zaman grafikleri, osiloskop görünümlü PWM paneli, geniş ekranda iki sütunlu düzen.
 
@@ -196,7 +196,7 @@ Kabul: EditMode testi geçiyor: aynı konum ve hızda lamba yüzdeleri ve güç 
 - [x] `api/chat.ts` Vercel fonksiyonu, Groq bağlantısı, araç tanımı, istek sınırı, `tsconfig.api.json` ile tip kontrolü
 - [x] Web'de sohbet paneli (`src/components/ChatPanel.tsx`, istemci `src/logic/chat.ts`); komutlar simülasyona uygulanır ve etiket olarak gösterilir
 - [x] Test: yerel `vercel dev` yerine sahte LLM'e karşı `npm run -s chat-deneme` (13 deneme) + Vercel önizlemesinde (dal adresi, Vercel girişi ister) gerçek Groq ile kullanıcı denemesi. `GROQ_API_KEY` Vercel'de (kullanıcı girdi).
-- [ ] `develop` → `main` ile canlı siteye yayın (`v0.4-demo`) — kullanıcının kararı bekleniyor
+- [x] `develop` → `main` ile canlı siteye yayın: `v0.4-demo` (26 Kasım, PR #17). Canlı `/api/chat` doğrulandı; kullanılan model `openai/gpt-oss-120b`.
 
 Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu ana kadar ne kadar tasarruf ettik?" sorusuna güncel veriyle cevap geliyor. **Sağlandı** (26 Kasım, Vercel önizlemesinde; PR #15).
 
@@ -286,4 +286,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] ESP32/donanım tarafını kimin yapacağı belli değil; kullanıcı gerekirse devralabilir.
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 
-**Sıradaki adım:** Aşama 3 (grafik), yeni bir oturumda. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Bekleyen karar: LLM asistanlı web sürümünün `v0.4-demo` olarak canlıya alınması.
+**Sıradaki adım:** Aşama 3 (grafik), yeni bir oturumda. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Web `v0.4-demo` (LUMA dahil) canlıda.
