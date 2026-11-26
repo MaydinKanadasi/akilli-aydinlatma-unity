@@ -32,9 +32,15 @@ public static class SahneKurucu
 
     // Spot ışık ayarları. Şiddet %100'deki değerdir; LambaKontrol PWM yüzdesiyle doğrusal ölçekler.
     // Işık 7,75 m yükseklikte; ters kare düşüşüyle yere ulaşan aydınlık şiddet / yükseklik² kadardır.
-    const float IsikSiddeti = 150f;
-    const float IsikMenzili = 25f;
-    const float IsikAcisi = 110f;
+    // 26 Kasım: 110° / 25 m / 150'de iki lamba ortasındaki yaya (karşı kaldırım) %100 lambaya dikeyden
+    // ~65° açıda ve ~18 m uzakta kalıyor, koninin dışında olduğu için hiç ışık almıyordu. Geniş koni ve
+    // uzun menzil ("D" ayarı, kullanıcı Play'de M ile karşılaştırıp seçti): ışık havuzları birleşir, yaya
+    // lambalar arasında da aydınlık kalır. Denenen ara ayar "M": 220 / 40 m / 150° / iç oran 0,7
+    // (havuzlar daha belirgin, lamba ortasında yaya daha loş).
+    const float IsikSiddeti = 250f;
+    const float IsikMenzili = 45f;
+    const float IsikAcisi = 165f;
+    const float IsikIcOrani = 0.85f; // iç koni / dış koni: iç konide tam şiddet, kenara doğru yumuşak düşüş // iç koni / dış koni: iç konide tam şiddet, kenara doğru yumuşak düşüş
     // %100'deki armatür parlaması (emission). HDR: 1'den büyük değerler bloom eşiğini (1) aşar ve
     // armatürün çevresine ışık taşar. PWM ile doğrusal ölçeklenir: %20'de 1 (hale yok denecek kadar),
     // %100'de 5 (belirgin hale). 20 denendi: haleler ışık havuzlarını örtüyordu.
@@ -185,7 +191,7 @@ public static class SahneKurucu
             isik.intensity = IsikSiddeti;
             isik.range = IsikMenzili;
             isik.spotAngle = IsikAcisi;
-            isik.innerSpotAngle = IsikAcisi * 0.6f;
+            isik.innerSpotAngle = IsikAcisi * IsikIcOrani;
             isik.shadows = LightShadows.Soft;
             isik.lightmapBakeType = LightmapBakeType.Realtime;
 
