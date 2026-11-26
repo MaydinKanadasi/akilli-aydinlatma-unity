@@ -213,6 +213,16 @@ Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu 
 
 Kabul: Grafik dersinin anahtar kare ve ışıklandırma konuları sahnede tek tek gösterilebiliyor.
 
+Başlangıç notları (Aşama 3 için, 26 Kasım):
+- Işık ayarları: spot ışığın %100 şiddeti, menzili ve açısı `Assets/Editor/SahneKurucu.cs`'teki `IsikSiddeti` (80), `IsikMenzili` (25), `IsikAcisi` (110) sabitlerinde; armatür parlaması `ArmaturIsimasi`. Çalışma anında yüzdeye göre ölçekleme `LambaKontrol.YuzdeUygula`'da.
+- Gece/gündüz şu an anlık geçiş: `SimulasyonYoneticisi.OrtamiUygula` (ay ışığı rengi/şiddeti, kamera arka plan rengi, ortam ışığı). Yumuşak geçiş ve gökyüzü buraya yapılır; `SahneKurucu.GeceOrtamiAyarla` ve `KameraKur` (düz renk arka plan, skybox yok) da birlikte güncellenir.
+- Gölge alanı: `Assets/Settings/PC_RPAsset.asset` (kalite seviyesi PC, `m_CurrentQuality: 1`). Ek ışık gölgeleri açık; 5 spot için atlas 2048'den 4096'ya çıkarılmalı.
+- Bloom: URP Volume. Projede `DefaultVolumeProfile.asset` ve `SampleSceneProfile.asset` var; Sokak sahnesine kendi profiliyle bir Global Volume'u `SahneKurucu` eklemeli (sahne her kurulumda yeniden oluşur).
+- Kamera: `SahneKurucu.KameraKur` (90, 45, -80), FOV 55; yol ekranda ince kalıyor. Sunum kamera turu Aşama 4'te.
+- Anahtar kare animasyonları (yaya yürüyüşü, LUMA salınma/pervane) ders gereği kullanıcı tarafından Animation penceresinde **elle** yapılır; Claude adım adım yönlendirir, animasyonu koddan üretmez. Animasyonlu nesneler sahne her kurulduğunda kaybolmaması için prefab olarak tutulur ve `SahneKurucu` prefabı sahneye yerleştirir (şu an yaya ve araç kodla oluşturulan basit şekiller).
+- Geçici `GelistiriciPaneli` sol taraftaki 1. ve 2. lambanın önünü kapatıyor; Aşama 4'e kadar gerekirse küçültülebilir.
+- Her görsel değişiklikten sonra: batchmode ile sahneyi kur + EditMode testlerini çalıştır (12 test), sonra kullanıcıdan editörde Play ile ekran görüntüsü iste.
+
 **Aşama 4 – Unity arayüzü ve sunum**
 
 - [ ] Enerji paneli ve kontroller (gönder, hız, duraklat, gece/gündüz), UI Toolkit, Türkçe font
