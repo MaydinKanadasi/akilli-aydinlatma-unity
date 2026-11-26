@@ -51,7 +51,7 @@ Web arayüzü tamamlandı ve `v0.3-demo` sürümüyle yayında. Hocaya `v0.2-dem
 | Repo | [MaydinKanadasi/akilli-aydinlatma](https://github.com/MaydinKanadasi/akilli-aydinlatma) (açık), yerelde `~/Projects/akilli-aydinlatma` |
 | Teknoloji | React 19 + Vite 8 + TypeScript 6, düz CSS, grafikler kendi SVG kodumuz (kütüphane yok) |
 | Sürümler | `v0.1-demo` (temel demo), `v0.2-demo` (görsel revizyon), `v0.3-demo` (iki sütunlu düzen) |
-| Son PR'lar | #11 iki sütunlu düzen, #12 README örnek veri düzeltmesi, #13 develop → main (v0.3) |
+| Son PR'lar | #13 develop → main (v0.3), #14 test vektörü betiği, #15 LLM asistanı LUMA (develop'ta; main'e henüz geçmedi) |
 
 **Özellikler:** gerçekçi yol sahnesi (gece/gündüz, kaldırım, ışık konisi ve halkası, yürüyen yaya, farlı araç), hız kaydırıcısı ve hazır butonlar, duraklat / tek adım / 1x-5x-10x, yola tıklayıp sürükleme, enerji paneli, son ~30 sn'lik zaman grafikleri, osiloskop görünümlü PWM paneli, geniş ekranda iki sütunlu düzen.
 
@@ -122,9 +122,12 @@ Aynı çalışmanın iki derste sunulacağı iki hocaya da bildirilmeli (yapıld
 - **Sunucu:** Web reposunda Vercel sunucu fonksiyonu `/api/chat` (`api/chat.ts`). API anahtarı yalnızca Vercel ortam değişkeninde (`GROQ_API_KEY`) ve yerelde git'e girmeyen `.env.local`'de durur (`*.local` zaten `.gitignore`'da); repo açık olduğu için asla koda yazılmaz. Kötüye kullanıma karşı basit istek sınırı (IP başına dakikalık) ve mesaj uzunluğu / geçmiş uzunluğu sınırı eklenir.
 - **Yerel test:** `npm run dev` (Vite) `/api` fonksiyonlarını çalıştırmaz; yerelde `npx vercel dev` kullanılır (`npx vercel link` ve `npx vercel env pull .env.local` ile). Anahtar Vercel'de Secret türünde; `env pull` Secret değeri getirmezse kullanıcı Groq'ta yerel test için ikinci bir anahtar oluşturup `.env.local`'e kendisi yazar (Claude anahtarı görmez). `api/` klasörü mevcut `tsc -b` kapsamında değil; ayrı bir `tsconfig` ile tip kontrolüne eklenir.
 - **İşleyiş:** Arayüz kullanıcının mesajıyla birlikte o anki durumu gönderir: ortak veri formatındaki anlık durum + geçmiş özeti (`smartWh`, `normalWh`, tasarruf %, simülasyon süresi sn, zaman çarpanı, duraklatma). LLM ya cevap yazar ya da tool calling ile komut döndürür; arayüz komutu uygular. Cevaplar Türkçe.
-- **Araçlar (tools):** `spawn_object(speedKmh)`, `set_night(isNight)`, `set_paused(paused)`, `set_time_scale(1|5|10)`, `reset_energy()`. Web'deki karşılıkları `useMockSimulation`'da hazır (`spawn`, `setNight`, `setPaused`, `setTimeScale`, `resetEnergy`).
+- **Komutlar:** İstemciye dönen komutlar `spawn_object(speedKmh)`, `set_night(isNight)`, `set_paused(paused)`, `set_time_scale(scale: 1|5|10)`, `reset_energy()`. Web'deki karşılıkları `useMockSimulation`'da (`spawn`, `setNight`, `setPaused`, `setTimeScale`, `resetEnergy`), Unity'dekiler `SimulasyonYoneticisi`'nde (`Spawn`, `SetNight`, `SetPaused`, `SetTimeScale`, `ResetEnergy`).
+- **LLM'e verilen araç:** Tek araç `simulasyonu_ayarla` (isteğe bağlı alanlar: `isNight`, `paused`, `timeScale`, `resetEnergy`, `spawnSpeedKmh`); sunucu bunu yukarıdaki komutlara sabit sırayla çevirir. Sebep: yedek modeller (GPT-OSS) paralel araç çağrısını desteklemiyor; tek araçla "gece yap ve araç gönder" her modelde tek çağrıda olur.
+- **API sözleşmesi (Unity istemcisi de aynısını kullanır):** `POST https://akilli-aydinlatma.vercel.app/api/chat`, gövde `{messages:[{role:"user"|"assistant", content}], state:{source, isNight, object, lamps, powerW, normalPowerW, smartWh, normalWh, simTimeSec, timeScale, paused}}` (son 10 mesaj, kullanıcı mesajı en fazla 500 karakter); cevap `{reply, actions:[{name, args}], model}`, hata durumunda `{error}` (Türkçe, HTTP 400/413/429/500/502). İstek sınırı: IP başına 10/dk, genel 25/dk (sunucu örneği başına).
 - **Unity istemcisi:** `UnityWebRequest` ile canlı siteye (`https://akilli-aydinlatma.vercel.app/api/chat`) istek atar; masaüstü derlemesinde CORS gerekmez. Anahtar Unity'de de tutulmaz.
 - **Model:** Ücretsiz katman. Birincil: Groq; kayıtta kredi kartı istemiyor, kullanım dakika/gün başına sınırlarla kısıtlı, ödeme bilgisi girilmedikçe ücret yok ([kaynak](https://community.groq.com/t/is-there-a-free-tier-and-what-are-its-limits/790)). OpenAI uyumlu API. Yedek: Google Gemini'nin uygun ülkelerde ücretsiz katmanı ([kaynak](https://ai.google.dev/gemini-api/docs/rate-limits)). Servis tek ayarla (`LLM_PROVIDER`) değiştirilebilir yazılır. Model adı, tool calling desteği ve güncel sınırlar uygulama anında kontrol edilir; ücretsiz katman koşulları değişebilir.
+- **Model seçimi (26 Kasım):** Varsayılan `llama-3.3-70b-versatile` bu Groq hesabında yok (`model_not_found`). Sunucu bu durumda `GET /openai/v1/models` ile hesabın listesini alıp `openai/gpt-oss-120b` → `openai/gpt-oss-20b` → `llama-3.1-8b-instant` sırasıyla ilk uygun olana geçer ve sunucu örneği boyunca hatırlar. Kalıcı seçim için Vercel'e `GROQ_MODEL` (Config türünde) eklenebilir. Cevaptaki `model` alanı kullanılan modeli gösterir.
 - **Sunum güvencesi:** İnternet ya da servis sorunu ihtimaline karşı asistanın çalıştığı anları gösteren yedek video kaydedilir.
 
 **Robot karakteri – LUMA:** Asistan yalnızca Unity'de, yolun üstünde uçan insansı bir robot olarak görünür (adı ışık birimi lümenden). Web'deki sohbet paneli sade kalır, robot görseli yoktur.
@@ -190,11 +193,14 @@ Kabul: EditMode testi geçiyor: aynı konum ve hızda lamba yüzdeleri ve güç 
 
 **Aşama 2b – LLM asistanı (web)**
 
-- [ ] `api/chat.ts` Vercel fonksiyonu, Groq bağlantısı, tool tanımları, istek sınırı, `api/` için tip kontrolü
-- [ ] Web'de sohbet paneli; tool çağrılarını simülasyona uygulama
-- [ ] Yerelde `npx vercel dev` ile test, Vercel'de `GROQ_API_KEY` tanımlama (kullanıcı), yayın
+- [x] `api/chat.ts` Vercel fonksiyonu, Groq bağlantısı, araç tanımı, istek sınırı, `tsconfig.api.json` ile tip kontrolü
+- [x] Web'de sohbet paneli (`src/components/ChatPanel.tsx`, istemci `src/logic/chat.ts`); komutlar simülasyona uygulanır ve etiket olarak gösterilir
+- [x] Test: yerel `vercel dev` yerine sahte LLM'e karşı `npm run -s chat-deneme` (13 deneme) + Vercel önizlemesinde (dal adresi, Vercel girişi ister) gerçek Groq ile kullanıcı denemesi. `GROQ_API_KEY` Vercel'de (kullanıcı girdi).
+- [ ] `develop` → `main` ile canlı siteye yayın (`v0.4-demo`) — kullanıcının kararı bekleniyor
 
-Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu ana kadar ne kadar tasarruf ettik?" sorusuna güncel veriyle cevap geliyor.
+Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu ana kadar ne kadar tasarruf ettik?" sorusuna güncel veriyle cevap geliyor. **Sağlandı** (26 Kasım, Vercel önizlemesinde; PR #15).
+
+Önizlemede bulunan ve çözülenler: hesapta varsayılan model yok → otomatik yedek model; paralel araç çağrısı → tek araç tasarımı; cevapta Markdown (`**`) → istemde düz metin kuralı ve sunucuda temizleme; sayılarda nokta → Türkçe ondalık virgül kuralı. Hata mesajları Groq'un HTTP ve hata kodunu içerir (teşhis için).
 
 **Aşama 3 – Grafik**
 
@@ -280,4 +286,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] ESP32/donanım tarafını kimin yapacağı belli değil; kullanıcı gerekirse devralabilir.
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 
-**Sıradaki adım:** Aşama 2b (web'de LLM asistanı, web reposunda); Groq anahtarı Vercel'de hazır. Alternatif: Aşama 3 (grafik). Aşama 0–2, 24 Kasım'da takvimin önünde tamamlandı.
+**Sıradaki adım:** Aşama 3 (grafik), yeni bir oturumda. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Bekleyen karar: LLM asistanlı web sürümünün `v0.4-demo` olarak canlıya alınması.
