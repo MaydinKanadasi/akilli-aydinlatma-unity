@@ -238,7 +238,22 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 **Yalnızca Claude Code'da**
 
 - Dosyaları Claude kendisi yazar ve düzenler; komutları kendisi çalıştırır.
-- Unity batchmode komutlarından önce kullanıcıya projenin editörde kapalı olup olmadığı sorulur.
+- Unity batchmode komutlarından önce projenin editörde kapalı olduğu kontrol edilir: `ps -axo comm | grep -c "Unity.app/Contents/MacOS/Unity"` 0 olmalı ve `Temp/UnityLockfile` bulunmamalı. Açıksa kullanıcıdan kapatması istenir (Unity → Quit, "Save changes?" sorusuna Don't Save).
+
+**Pratik notlar (24 Kasım oturumundan)**
+
+- Plan dokümanının asıl kaynağı bu `CLAUDE.md`'dir (Masaüstündeki eski kopya artık yok).
+- Unity yolu: `U=/Applications/Unity/Hub/Editor/6000.6.2f1/Unity.app/Contents/MacOS/Unity`. Proje kökünden:
+  - Sahne: `$U -batchmode -quit -projectPath . -executeMethod SahneKurucu.KomutSatirindanKur -logFile <kayıt>`
+  - Testler: `$U -batchmode -projectPath . -runTests -testPlatform EditMode -testResults <sonuç.xml> -logFile <kayıt>` (`-quit` verilmez; sonuç XML'indeki `<test-run ... result= total= passed= failed=>` okunur)
+  - Kayıt dosyası scratchpad'e yazdırılır; derleme hataları `grep 'error CS'` ile bulunur. Çıkış kodu 0 ise "Curl error 42" ve "Access token is unavailable" satırları zararsızdır.
+- Editör açıkken kayıt `~/Library/Logs/Unity/Editor.log`'a değil, proje içindeki `Logs/Editor.log`'a yazılır.
+- Unity Hub'da oturum kapalıysa batchmode çıkış kodu 198 ile kapanır; kullanıcı Hub'ı açıp profil simgesinden oturum açar.
+- Şablonla gelen `com.unity.purchasing` desteklenmediği için kaldırıldı (PR #1); tekrar eklenmez.
+- Editör malzemeleri ilk açılışta `_Color` alanını eşitleyerek küçük farklar yaratabilir; zararsızdır, commit'lenir.
+- Bu makinede bir GateGuard hook'u, ilk Bash komutundan ve her yeni dosya oluşturma/düzenlemeden önce kısa bir açıklama (kullanıcının isteği, dosyayı kim kullanıyor, veri şeması, kullanıcının talimatı) istiyor; açıklamayı yazıp aynı işlemi tekrar denemek yeterli. Engellenen bir düzenlemeye bağlı komutlar aynı mesajda gönderilmez.
+- Vercel'in yeni arayüzü: proje sayfasında sol menüde **Environment Variables**; değişken türü **Secret** (kaydedildikten sonra görünmez) ya da **Config**. "Create Environment" ve "Upgrade" ücretli Pro plana ait.
+- Kullanıcı ekran görüntüsüyle ilerliyor; her adımda nereye tıklanacağı ve ne görüleceği yazılır.
 
 **Yalnızca claude.ai sohbetinde**
 
