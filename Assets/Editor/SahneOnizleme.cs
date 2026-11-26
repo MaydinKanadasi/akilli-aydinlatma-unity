@@ -71,6 +71,8 @@ public static class SahneOnizleme
             nesne.gameObject.SetActive(true);
             var p = nesne.position;
             nesne.position = new Vector3(konum * SahneKurucu.LambaAraligi, p.y, p.z);
+            var farlar = nesne.GetComponent<AracFarlari>();
+            if (farlar != null) farlar.Ayarla(gece: !gunduz);
             if (yayaKonumu != null && Array.IndexOf(Environment.GetCommandLineArgs(), "-adimpozu") >= 0)
                 AdimPozu(nesne);
         }

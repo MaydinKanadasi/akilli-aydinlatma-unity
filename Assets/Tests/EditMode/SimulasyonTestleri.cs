@@ -81,6 +81,27 @@ namespace AkilliAydinlatma.Tests
         }
 
         [Test]
+        public void AracFarlari_GeceYanarGunduzSoner()
+        {
+            var arac = new GameObject("TestArac");
+            var far = new GameObject("Far").AddComponent<Light>();
+            far.transform.SetParent(arac.transform);
+            var farlar = arac.AddComponent<AracFarlari>();
+            farlar.Baglan(new[] { far }, null, null, Color.white, Color.red);
+            sim.Baglan(null, null, null, arac.transform, null);
+            try
+            {
+                sim.SetNight(false);
+                Assert.IsFalse(farlar.Yanik);
+                Assert.IsFalse(far.enabled);
+                sim.SetNight(true);
+                Assert.IsTrue(farlar.Yanik);
+                Assert.IsTrue(far.enabled);
+            }
+            finally { Object.DestroyImmediate(arac); }
+        }
+
+        [Test]
         public void Gunduz_TumLambalarKapali()
         {
             sim.SetNight(false);

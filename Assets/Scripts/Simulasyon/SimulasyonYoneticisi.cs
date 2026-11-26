@@ -167,10 +167,15 @@ namespace AkilliAydinlatma
             t.position = new Vector3((float)(nesne.Value.Position * ControllerConfig.Default.LampSpacingM), p.y, p.z);
         }
 
-        // Gece/gündüz görünümü OrtamGecisi'nde (EditMode testlerinde bağlı değildir)
+        // Gece/gündüz görünümü OrtamGecisi'nde (EditMode testlerinde bağlı değildir).
+        // Araç farları ortamın yumuşak geçişini beklemeden anında yanar/söner.
+        AracFarlari aracFarlari;
+
         void OrtamiUygula(bool aninda)
         {
             if (ortam != null) ortam.Ayarla(IsNight, aninda);
+            if (aracFarlari == null && arac != null) aracFarlari = arac.GetComponent<AracFarlari>();
+            if (aracFarlari != null) aracFarlari.Ayarla(IsNight);
         }
     }
 }
