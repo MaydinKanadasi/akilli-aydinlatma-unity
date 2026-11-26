@@ -204,7 +204,7 @@ Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu 
 
 **Aşama 3 – Grafik**
 
-- [ ] Gölgeler, armatürde emission, URP Volume ile bloom
+- [x] Gölgeler, armatürde HDR emission, URP Global Volume ile bloom + ACES tonemapping + pozlama +1 EV (26 Kasım; kullanıcı editörde Bloom açık/kapalı karşılaştırdı)
 - [x] `PC_RPAsset` içinde ek ışık gölge alanı (Additional Lights Shadow Atlas) 4096, gölge mesafesi 50 → 200 m (kamera yola ~70 m uzakta; 50 m'de gölgeler çizilmiyordu). Uyarı kalktı (26 Kasım).
 - [x] Spot ışık şiddeti 80 → 150; kamera yukarıdan yan bakış (90, 55, -48), FOV 60 (26 Kasım, önizlemelerle seçildi). Bloom/tonemapping sonrası şiddet yeniden gözden geçirilir.
 - [ ] Gece/gündüz geçişi: yönlü ışık rengi ve şiddeti, gökyüzü
@@ -214,14 +214,14 @@ Kabul: "Gece yap ve 70 km/s hızla bir araç gönder" komutu uygulanıyor; "Şu 
 Kabul: Grafik dersinin anahtar kare ve ışıklandırma konuları sahnede tek tek gösterilebiliyor.
 
 Başlangıç notları (Aşama 3 için, 26 Kasım):
-- Işık ayarları: spot ışığın %100 şiddeti, menzili ve açısı `Assets/Editor/SahneKurucu.cs`'teki `IsikSiddeti` (150), `IsikMenzili` (25), `IsikAcisi` (110) sabitlerinde; armatür parlaması `ArmaturIsimasi`. Çalışma anında yüzdeye göre ölçekleme `LambaKontrol.YuzdeUygula`'da.
+- Işık ayarları: spot ışığın %100 şiddeti, menzili ve açısı `Assets/Editor/SahneKurucu.cs`'teki `IsikSiddeti` (150), `IsikMenzili` (25), `IsikAcisi` (110) sabitlerinde; armatür parlaması `ArmaturIsimasi` (HDR, %100'de 5; 20 denendi, haleler ışık havuzlarını örtüyordu). Çalışma anında yüzdeye göre ölçekleme `LambaKontrol.YuzdeUygula`'da.
 - Gece/gündüz şu an anlık geçiş: `SimulasyonYoneticisi.OrtamiUygula` (ay ışığı rengi/şiddeti, kamera arka plan rengi, ortam ışığı). Yumuşak geçiş ve gökyüzü buraya yapılır; `SahneKurucu.GeceOrtamiAyarla` ve `KameraKur` (düz renk arka plan, skybox yok) da birlikte güncellenir.
 - Gölge alanı: `Assets/Settings/PC_RPAsset.asset` (kalite seviyesi PC, `m_CurrentQuality: 1`). Ek ışık gölgeleri açık; atlas 4096, gölge mesafesi 200 m.
-- Bloom: URP Volume. Projede `DefaultVolumeProfile.asset` ve `SampleSceneProfile.asset` var; Sokak sahnesine kendi profiliyle bir Global Volume'u `SahneKurucu` eklemeli (sahne her kurulumda yeniden oluşur).
+- Son işlem: `SahneKurucu.GorselEfektleriKur` sahneye `GlobalVolume` ekler; profil `Assets/Settings/SokakVolumeProfili.asset` (Bloom eşik 1, şiddet 0,8, yayılım 0,65; Tonemapping ACES; Color Adjustments pozlama +1 EV). Değerler `SahneKurucu`'daki sabitlerde, her kurulumda profile yeniden yazılır. Kamerada post-processing ve SMAA açık. Projenin varsayılan profilinde bloom 0 ve tonemapping yok (değiştirilmedi). Editörde Inspector'dan profili değiştirmek varlık dosyasını değiştirir; sahne kurulumu geri alır.
 - Kamera: `SahneKurucu.KameraKur` (90, 55, -48) → (90, 0, 2), FOV 60: 5 lamba eşit aralıklı, kısılma düzeni yan yana okunur. Çapraz (sinematik) açı denendi, uzak lambalar çok küçüldüğü için varsayılan yapılmadı; sinematik açılar Aşama 4'teki kamera turunda.
 - Anahtar kare animasyonları (yaya yürüyüşü, LUMA salınma/pervane) ders gereği kullanıcı tarafından Animation penceresinde **elle** yapılır; Claude adım adım yönlendirir, animasyonu koddan üretmez. Animasyonlu nesneler sahne her kurulduğunda kaybolmaması için prefab olarak tutulur ve `SahneKurucu` prefabı sahneye yerleştirir (şu an yaya ve araç kodla oluşturulan basit şekiller).
 - Geçici `GelistiriciPaneli` ekranın üstünde yatay şerit (kontroller | durum | enerji); "Gizle" ile küçük düğmeye iner.
-- Önizleme aracı: `Assets/Editor/SahneOnizleme.cs`, Play gerekmeden kameradan PNG çeker (gece, araç konum 3,43, lambalar 0 20 100 100 100; panel görüntüde yok). `$U -batchmode -quit -projectPath . -executeMethod SahneOnizleme.KomutSatirindanCek -onizleme <cikti.png> [-kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;..."] -logFile <kayıt>`. Görsel değişiklikleri kullanıcıya göstermeden önce kontrol etmek ve seçenekleri karşılaştırmak için.
+- Önizleme aracı: `Assets/Editor/SahneOnizleme.cs`, Play gerekmeden kameradan PNG çeker (gece, araç konum 3,43, lambalar 0 20 100 100 100; panel görüntüde yok). `$U -batchmode -quit -projectPath . -executeMethod SahneOnizleme.KomutSatirindanCek -onizleme <cikti.png> [-kameralar "ad=x,y,z,bakX,bakY,bakZ,fov;..."] -logFile <kayıt>`. Görsel değişiklikleri kullanıcıya göstermeden önce kontrol etmek ve seçenekleri karşılaştırmak için. HDR (half float) dokuya çizer: 8 bitlik hedefte URP HDR'yi kapatıyor, bloom görünmüyordu. Çekmeden önce `DynamicGI.UpdateEnvironment` ve bir ısınma karesi: yoksa ilk kare soluk/mavimsi çıkıyor.
 - Her görsel değişiklikten sonra: batchmode ile sahneyi kur + EditMode testlerini çalıştır (12 test), sonra kullanıcıdan editörde Play ile ekran görüntüsü iste.
 
 **Aşama 4 – Unity arayüzü ve sunum**
@@ -297,4 +297,4 @@ Kullanıcının Unity bilgisi yok; iş büyük ölçüde "vibecoding" ile ilerle
 - [ ] ESP32/donanım tarafını kimin yapacağı belli değil; kullanıcı gerekirse devralabilir.
 - [ ] README'deki ekip tablosuna diğer üyeler eklenecek.
 
-**Sıradaki adım:** Aşama 3, 2. adım: armatürde HDR emission ve URP Volume ile bloom (+ tonemapping). Aşama 3'ün 1. adımı (gölge alanı, gölge mesafesi, ışık şiddeti, kamera, panel) 26 Kasım'da bitti. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Web `v0.4-demo` (LUMA dahil) canlıda.
+**Sıradaki adım:** Aşama 3, 3. adım: gece/gündüz yumuşak geçişi ve gökyüzü. Aşama 3'ün 1. adımı (gölge alanı, gölge mesafesi, ışık şiddeti, kamera, panel) ve 2. adımı (emission, bloom, tonemapping) 26 Kasım'da bitti. Aşama 0–2 24 Kasım'da, Aşama 2b 26 Kasım'da tamamlandı (takvimin önünde). Web `v0.4-demo` (LUMA dahil) canlıda.

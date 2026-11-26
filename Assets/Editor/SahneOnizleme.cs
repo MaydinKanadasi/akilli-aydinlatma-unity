@@ -67,15 +67,32 @@ public static class SahneOnizleme
 
     static void Cek(Camera kamera, string cikti)
     {
-        var rt = new RenderTexture(Genislik, Yukseklik, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+        // Sahne batchmode'da yeni açıldığında ortam ışığı henüz hesaplanmamış olabiliyor ve ilk kare
+        // soluk/mavimsi çıkıyor: önce ortamı güncelle, bir ısınma karesi çiz, sonra asıl kareyi çek.
+        DynamicGI.UpdateEnvironment();
+        // URP, hedef dokunun biçimiyle çizer: 8 bitlik (LDR) hedefte HDR kaybolur, emission 1'de kesilir ve
+        // bloom çalışmaz. Play'deki gibi olması için HDR (half float, doğrusal) dokuya çizip sRGB'ye çeviriyoruz.
+        var rt = new RenderTexture(Genislik, Yukseklik, 24, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
         kamera.targetTexture = rt;
         kamera.Render();
+        kamera.Render();
         RenderTexture.active = rt;
-        var tex = new Texture2D(Genislik, Yukseklik, TextureFormat.RGB24, false);
-        tex.ReadPixels(new Rect(0, 0, Genislik, Yukseklik), 0, 0);
-        tex.Apply();
+        var hdr = new Texture2D(Genislik, Yukseklik, TextureFormat.RGBAHalf, false, true);
+        hdr.ReadPixels(new Rect(0, 0, Genislik, Yukseklik), 0, 0);
         kamera.targetTexture = null;
         RenderTexture.active = null;
+
+        var pikseller = hdr.GetPixels();
+        for (int i = 0; i < pikseller.Length; i++)
+        {
+            var c = pikseller[i];
+            pikseller[i] = new Color(Mathf.LinearToGammaSpace(Mathf.Clamp01(c.r)),
+                                     Mathf.LinearToGammaSpace(Mathf.Clamp01(c.g)),
+                                     Mathf.LinearToGammaSpace(Mathf.Clamp01(c.b)), 1f);
+        }
+        var tex = new Texture2D(Genislik, Yukseklik, TextureFormat.RGB24, false);
+        tex.SetPixels(pikseller);
+        tex.Apply();
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(cikti)));
         File.WriteAllBytes(cikti, tex.EncodeToPNG());

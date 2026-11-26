@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 // "Akıllı Aydınlatma → Sahneyi Kur" menü komutu.
 // Yol, kaldırımlar, 5 lamba, ay ışığı ve kamerayı koddan kurar ve Assets/Scenes/Sokak.unity olarak kaydeder.
@@ -34,7 +35,17 @@ public static class SahneKurucu
     const float IsikSiddeti = 150f;
     const float IsikMenzili = 25f;
     const float IsikAcisi = 110f;
-    static readonly Color ArmaturIsimasi = new Color(1f, 0.85f, 0.6f) * 2f; // %100'deki parlama
+    // %100'deki armatür parlaması (emission). HDR: 1'den büyük değerler bloom eşiğini (1) aşar ve
+    // armatürün çevresine ışık taşar. PWM ile doğrusal ölçeklenir: %20'de 1 (hale yok denecek kadar),
+    // %100'de 5 (belirgin hale). 20 denendi: haleler ışık havuzlarını örtüyordu.
+    static readonly Color ArmaturIsimasi = new Color(1f, 0.85f, 0.6f) * 5f;
+
+    // Son işlem (post-processing): URP Global Volume ile bloom ve tonemapping
+    const string VolumeProfiliYolu = "Assets/Settings/SokakVolumeProfili.asset";
+    const float BloomEsigi = 1f;     // bu parlaklığın üstündeki pikseller taşar
+    const float BloomSiddeti = 0.8f;
+    const float BloomYayilimi = 0.65f; // taşmanın ne kadar geniş yayılacağı (0–1)
+    const float PozlamaEV = 1f; // ACES sahneyi koyulaştırır; +1 EV görüntüyü iki kat aydınlatır
 
     const string SahneYolu = "Assets/Scenes/Sokak.unity";
     const string MalzemeKlasoru = "Assets/Materials/Sahne";
@@ -72,6 +83,7 @@ public static class SahneKurucu
         var ay = AyIsigiKur(kok.transform);
         var kamera = KameraKur(kok.transform);
         GeceOrtamiAyarla();
+        GorselEfektleriKur(kok.transform);
 
         // Simülasyon yöneticisi ve geçici geliştirici paneli
         var simGo = new GameObject("Simulasyon");
@@ -251,8 +263,67 @@ public static class SahneKurucu
         kamera.farClipPlane = 600f;
         kamera.clearFlags = CameraClearFlags.SolidColor;
         kamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f); // gece göğü
+        // Son işlem (bloom, tonemapping) kamerada açık olmalı; ince direklerin kenarları için SMAA
+        var urpKamera = kamera.GetUniversalAdditionalCameraData();
+        urpKamera.renderPostProcessing = true;
+        urpKamera.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
         kameraGo.AddComponent<AudioListener>();
         return kamera;
+    }
+
+    // Sahnenin tamamına etki eden Global Volume. Profil varlık olarak kaydedilir; ayarlar her kurulumda
+    // koddaki değerlere döner (Play'de Inspector'dan Bloom'u kapatmak gibi denemeler kalıcı olmaz).
+    static void GorselEfektleriKur(Transform kok)
+    {
+        var go = new GameObject("GlobalVolume");
+        go.transform.SetParent(kok, false);
+        var volume = go.AddComponent<Volume>();
+        volume.isGlobal = true;
+        volume.priority = 1; // projenin varsayılan profilinin (bloom 0, tonemapping yok) üstünde
+        volume.sharedProfile = VolumeProfiliHazirla();
+    }
+
+    static VolumeProfile VolumeProfiliHazirla()
+    {
+        var profil = AssetDatabase.LoadAssetAtPath<VolumeProfile>(VolumeProfiliYolu);
+        if (profil == null)
+        {
+            profil = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profil, VolumeProfiliYolu);
+        }
+
+        // Bloom: eşiği aşan parlak pikseller (armatürler) çevresine yumuşak bir hale yayar
+        var bloom = Bilesen<Bloom>(profil);
+        bloom.threshold.Override(BloomEsigi);
+        bloom.intensity.Override(BloomSiddeti);
+        bloom.scatter.Override(BloomYayilimi);
+        bloom.highQualityFiltering.Override(true);
+
+        // Tonemapping: HDR parlaklıkları ekrana sığdırır; ACES film benzeri kontrast verir
+        var ton = Bilesen<Tonemapping>(profil);
+        ton.mode.Override(TonemappingMode.ACES);
+
+        // Pozlama (exposure): fotoğraf makinesindeki gibi tüm görüntünün parlaklığı, EV cinsinden
+        var renk = Bilesen<ColorAdjustments>(profil);
+        renk.postExposure.Override(PozlamaEV);
+
+        EditorUtility.SetDirty(profil);
+        return profil;
+    }
+
+    // Profilde bileşen yoksa ekler (profil dosyasının içine alt varlık olarak); her zaman etkin bırakır
+    static T Bilesen<T>(VolumeProfile profil) where T : VolumeComponent
+    {
+        if (!profil.TryGet(out T bilesen))
+        {
+            bilesen = profil.Add<T>();
+            bilesen.name = typeof(T).Name;
+            bilesen.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+            AssetDatabase.AddObjectToAsset(bilesen, profil);
+        }
+        bilesen.active = true;
+        EditorUtility.SetDirty(bilesen);
+        return bilesen;
     }
 
     static void GeceOrtamiAyarla()
@@ -321,7 +392,7 @@ public static class SahneKurucu
         mat.SetFloat("_Smoothness", puruzsuzluk);
         if (isima.HasValue)
         {
-            // Emission: armatürün kendi kendine parlaması (bloom Aşama 3'te eklenecek)
+            // Emission: armatürün kendi kendine parlaması (HDR; bloom GorselEfektleriKur'da)
             mat.EnableKeyword("_EMISSION");
             mat.SetColor("_EmissionColor", isima.Value);
             mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
