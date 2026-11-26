@@ -86,6 +86,7 @@ public static class SahneKurucu
         var lambalar = LambalariKur(kok.transform, malzeme);
         var sensorler = SensorleriKur(kok.transform, malzeme);
         var (yaya, arac) = NesneleriKur(kok.transform, malzeme);
+        LumaKur(kok.transform);
         var ay = AyIsigiKur(kok.transform);
         KameraKur(kok.transform);
         var gokyuzu = GeceOrtamiAyarla(ay);
@@ -240,6 +241,18 @@ public static class SahneKurucu
         arac.SetActive(false);
 
         return (yaya.transform, arac.transform);
+    }
+
+    // LLM asistanı LUMA: 2. ve 3. lambanın arasında (75 m), lamba başlarının (8 m) üstünde, kameraya bakarak
+    // süzülür. 90 m'de ana kameradan 3. lambanın halesiyle üst üste biniyordu. 3 kat ölçek (~4 m): kamera
+    // ~60 m uzakta, gerçek boyutta nokta kadar kalıyordu. Uçuşu Aşama 4'te kodla.
+    static void LumaKur(Transform kok)
+    {
+        var luma = (GameObject)PrefabUtility.InstantiatePrefab(LumaKurucu.Hazirla(), kok);
+        luma.name = "Luma";
+        luma.transform.position = new Vector3(2.5f * LambaAraligi, 12f, -10f);
+        luma.transform.rotation = Quaternion.Euler(0f, 180f, 0f); // yüzü (+Z) kameraya (-Z) döner
+        luma.transform.localScale = Vector3.one * 3f;
     }
 
     static Light AyIsigiKur(Transform kok)
